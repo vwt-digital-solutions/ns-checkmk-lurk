@@ -2,6 +2,7 @@ import config
 
 import requests
 
+import socket
 
 def get_oath_token():
     data = {
@@ -15,3 +16,19 @@ def get_oath_token():
 
     return request["access_token"]
 
+def get_data(query, address):
+    family = socket.AF_INET if type(address) == tuple else socket.AF_UNIX
+    sock = socket.socket(family, socket.SOCK_STREAM)
+    sock.connect(address)
+
+    sock.sendall(query.encode())
+    sock.shutdown(socket.SHUT_WR)
+
+    data = []
+    while len(data) == 0 or data[-1] != b'':
+        data.append(sock.recv(4096))
+    sock.close()
+
+    response = "".join(item.decode() for item in data)
+
+    return response
