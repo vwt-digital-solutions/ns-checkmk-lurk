@@ -4,6 +4,7 @@ import requests
 
 import socket
 
+
 def get_oath_token():
     data = {
         "client_id": config.OAUTH_CLIENT_ID,
@@ -15,6 +16,7 @@ def get_oath_token():
                             data=data).json()
 
     return request["access_token"]
+
 
 def get_data(query, address):
     family = socket.AF_INET if type(address) == tuple else socket.AF_UNIX
@@ -32,3 +34,16 @@ def get_data(query, address):
     response = "".join(item.decode() for item in data)
 
     return response
+
+
+def send_data(path, data, token):
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    request = requests.post(config.API_URL + path,
+                            json=data,
+                            headers=headers)
+
+    return request.status_code == 200
+
