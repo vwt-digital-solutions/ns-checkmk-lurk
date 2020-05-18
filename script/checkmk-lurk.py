@@ -1,3 +1,6 @@
+import json
+import time
+
 import config
 
 import requests
@@ -47,3 +50,23 @@ def send_data(path, data, token):
 
     return request.status_code == 200
 
+
+def do_events():
+    # Get events
+    events = {"servers": []}
+
+    # Foreach server get event data and add to events dict
+    for server in config.SERVERS:
+        events["servers"].append(
+            {server[1]: json.loads(
+                get_data("GET log\n"
+                         f"Filter: time >= {int(time.time() - 5400)}\n"
+                         "Filter: host_name != ""\n"
+                         "Columns: time host_groups host_name service_description state\n"
+                         "OutputFormat: json\n",
+                         server[0])
+            )}
+        )
+
+    # Send events
+    send_data("/checkmk-event", events, get_oath_token())
