@@ -1,10 +1,8 @@
 import json
 import time
-
+import os
 import config
-
 import requests
-
 import socket
 
 
@@ -54,21 +52,26 @@ def send_data(path, data, token):
 def do_events():
     # Get events
     events = {"events": []}
+    keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "event_state"]
 
     # Foreach site get event data and add to events dict
-    for site in config.SERVERS:
-        events["events"].append(
-            {site[1]: json.loads(
-                get_data("GET log\n"
-                         f"Filter: time >= {int(time.time() - 5400)}\n"
-                         "Filter: host_name != ""\n"
-                         "Columns: time host_groups host_name service_description state\n"
-                         "OutputFormat: json\n",
-                         site[0])
-            )}
+    for site in config.SITES:
+        result = json.loads(
+            get_data("GET log\n"
+                     f"Filter: time >= 1589874962\n"
+                     "Filter: host_name != ""\n"
+                     "Columns: time host_groups host_name service_description state\n"
+                     "OutputFormat: json\n",
+                     site["address"])
         )
+        for event_list in result:
+            site_name = os.getenv("OMD_SITE")
+            event_list.insert(0, site_name)
+            event_list.insert(0, "temp_id")
+            dic = dict(zip(keys, event_list))
+            dic["id"] = f"{site_name}_{dic['timestamp']}_{dic['hostname']}_{'event_state'}"
 
-    # Parse events
+            events["events"].append(dic)
 
     # Send events
     send_data("/checkmk-event", events, get_oath_token())
