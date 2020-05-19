@@ -1,8 +1,12 @@
 import json
 import time
-import os
+
 import config
+
+
 import requests
+
+
 import socket
 
 
@@ -58,19 +62,17 @@ def do_events():
     for site in config.SITES:
         result = json.loads(
             get_data("GET log\n"
-                     f"Filter: time >= 1589874962\n"
+                     f"Filter: time >= {int(time.time() - 5400)}\n"
                      "Filter: host_name != ""\n"
                      "Columns: time host_groups host_name service_description state\n"
                      "OutputFormat: json\n",
                      site["address"])
         )
         for event_list in result:
-            site_name = os.getenv("OMD_SITE")
-            event_list.insert(0, site_name)
+            event_list.insert(0, site["name"])
             event_list.insert(0, "temp_id")
             dic = dict(zip(keys, event_list))
-            dic["id"] = f"{site_name}_{dic['timestamp']}_{dic['hostname']}_{'event_state'}"
-
+            dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['event_state']}"
             events["events"].append(dic)
 
     # Send events

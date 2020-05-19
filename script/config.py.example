@@ -7,7 +7,7 @@ OAUTH_TOKEN_URL = ""
 
 API_URL = ""
 
-SERVERS = [
+SITES = [
     {"name": "SiteName1", "address": "/omd/sites/slave1/tmp/run/live"},
     {"name": "SiteName2", "address": ("localhost", 6557)},
 ]
