@@ -1,11 +1,10 @@
+import argparse
 import json
 import time
 
 import config
 
-
 import requests
-
 
 import socket
 
@@ -77,3 +76,26 @@ def do_events():
 
     # Send events
     send_data("/checkmk-event", events, get_oath_token())
+
+
+# Main function of the script
+def main():
+    # Construct argument parser
+    ap = argparse.ArgumentParser()
+
+    # Add the arguments to the parser
+    ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance")
+    args = vars(ap.parse_args())
+
+    # Check which data should be retrieved
+    if args['data'] == "event":
+        print("Retrieving event data ...")
+        do_events()
+    elif args['data'] == "performance":
+        print("Performance data is not yet supported")
+    else:
+        print("Invalid input, use event / performance for the --data input")
+
+
+if __name__ == "__main__":
+    main()
