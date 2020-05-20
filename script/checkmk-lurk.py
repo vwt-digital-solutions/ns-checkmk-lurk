@@ -72,7 +72,7 @@ def do_events():
             event_list.insert(0, site["name"])
             event_list.insert(0, "temp_id")
             dic = dict(zip(keys, event_list))
-            dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['event_state']}"
+            dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
             events["events"].append(dic)
 
     # Send events
