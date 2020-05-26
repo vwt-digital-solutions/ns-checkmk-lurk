@@ -1,5 +1,7 @@
 # Uncomment with correct values
 
+EVENT_TIME = 300
+
 OAUTH_CLIENT_ID = ""
 OAUTH_CLIENT_SECRET = ""
 OAUTH_CLIENT_SCOPE = ""
@@ -8,6 +10,7 @@ OAUTH_TOKEN_URL = ""
 API_URL = ""
 
 SITES = [
-    {"name": "SiteName1", "address": "/omd/sites/slave1/tmp/run/live"},
-    {"name": "SiteName2", "address": ("localhost", 6557)},
+    {"name": "SiteName1", "address": "/omd/sites/slave1/tmp/run/live", "certificate": None}, # Local namesocket
+    {"name": "SiteName2", "address": ("127.0.0.1", 6557), "certificate": "./certs/cert.pem"}, # External site with TLS
+    {"name": "SiteName3", "address": ("127.0.0.1", 6557), "certificate": None} # External site without TLS
 ]

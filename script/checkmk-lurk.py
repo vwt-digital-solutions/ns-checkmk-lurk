@@ -1,5 +1,6 @@
 import argparse
 import json
+import ssl
 import time
 
 import config
@@ -22,22 +23,30 @@ def get_oath_token():
     return request["access_token"]
 
 
-def get_data(query, address):
+def get_data(query, address, certificate):
     family = socket.AF_INET if type(address) == tuple else socket.AF_UNIX
     sock = socket.socket(family, socket.SOCK_STREAM)
+
+    if certificate:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+
+        context.load_verify_locations(certificate)
+
+        sock = context.wrap_socket(sock)
+
     sock.connect(address)
 
-    sock.sendall(query.encode())
-    sock.shutdown(socket.SHUT_WR)
+    sock.send(query.encode("utf-8"))
 
     data = []
     while len(data) == 0 or data[-1] != b'':
         data.append(sock.recv(4096))
     sock.close()
 
-    response = "".join(item.decode() for item in data)
-
-    return response
+    return "".join(item.decode("utf-8") for item in data)
 
 
 def send_data(path, data, token):
@@ -61,11 +70,12 @@ def do_events():
     for site in config.SITES:
         result = json.loads(
             get_data("GET log\n"
-                     f"Filter: time >= {int(time.time() - 5400)}\n"
+                     f"Filter: time >= {int(time.time() - config.EVENT_TIME)}\n"
                      "Filter: host_name != ""\n"
                      "Columns: time host_groups host_name service_description state\n"
-                     "OutputFormat: json\n",
-                     site["address"])
+                     "OutputFormat: json\n\n",
+                     site["address"],
+                     site["certificate"])
         )
         for event_list in result:
             event_list.insert(0, site["name"])
