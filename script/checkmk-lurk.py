@@ -92,6 +92,34 @@ def do_events():
     send_data("/checkmk-event", events, get_oath_token())
 
 
+def do_perf():
+    # Get performance data
+    services = {"services": []}
+    keys = ["id", "name", "host_groups", "hostname", "service_description", "perf_data", "event_state"]
+
+    for site in config.SITES:
+        result = json.loads(
+            get_data("GET services\n"
+                     "Filter: host_name != ""\n"
+                     "Columns: host_groups host_name service_description perf_data state\n"
+                     "OutputFormat: json\n",
+                     site["address"])
+        )
+        for service_list in result:
+            service_list.insert(0, site["name"])
+            service_list.insert(0, "temp_id")
+
+            dic = dict(zip(keys, service_list))
+
+            dic["id"] = f"{site['name']}_{dic['hostname']}_{dic['service_description']}"
+
+            services["services"].append(dic)
+
+    # Send services
+    # send_data("/checkmk-services", services, get_oath_token())
+    print(services)
+
+
 # Main function of the script
 def main():
     # Construct argument parser
@@ -107,6 +135,7 @@ def main():
         do_events()
     elif args['data'] == "performance":
         print("Performance data is not yet supported")
+        do_perf()
     else:
         print("Invalid input, use event / performance for the --data input")
 
