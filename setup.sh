@@ -21,4 +21,4 @@ echo "* * * * * /usr/bin/env python3 $(pwd)/script/checkmk-lurk.py --data event"
 crontab checkmk-lurk
 rm checkmk-lurk
 
-echo "setup completed!"
+echo "setup completed! "
