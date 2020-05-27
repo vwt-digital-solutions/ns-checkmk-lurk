@@ -3,11 +3,11 @@
 # check if python3-pip is installed
 # if not, install it
 echo "checking if python3-pip is installed"
-sudo dpkg -l | grep -qw python3-pip || sudo apt-get install python3-pip
+dpkg -l | grep -qw python3-pip || apt-get install python3-pip
 
 # installing the requirements
 echo "installing the python requirements ..."
-sudo python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 
 echo "installing crontabs ..."
 # Write out current crontab
