@@ -119,8 +119,7 @@ def do_perf():
             services["services"].append(dic)
 
     # Send services
-    # send_data("/checkmk-services", services, get_oath_token())
-    print(services)
+    send_data("/checkmk-services", services, get_oath_token())
 
 
 # Main function of the script
@@ -137,7 +136,7 @@ def main():
         print("Retrieving event data ...")
         do_events()
     elif args['data'] == "performance":
-        print("Performance data is not yet supported")
+        print("Retrieving performance data ...")
         do_perf()
     else:
         print("Invalid input, use event / performance for the --data input")
