@@ -37,7 +37,18 @@ def get_data(query, address, certificate):
 
         sock = context.wrap_socket(sock)
 
-    sock.connect(address)
+    try:
+        sock.connect(address)
+    # TODO if site is down send message to API notifying it that the site is down
+    except TimeoutError:
+        print(f"Timeout, site with address {address} is possibly offline")
+        return False
+    except ConnectionRefusedError:
+        print(f"Connection refused, site with address {address} is possibly offline")
+        return False
+    except ssl.SSLCertVerificationError:
+        print(f"Certificate verification error, site site with address {address} with certificate {certificate}")
+        return False
 
     sock.send(query.encode("utf-8"))
 
@@ -68,15 +79,19 @@ def do_events():
 
     # Foreach site get event data and add to events dict
     for site in config.SITES:
-        result = json.loads(
-            get_data("GET log\n"
-                     f"Filter: time >= {int(time.time() - config.EVENT_TIME)}\n"
-                     "Filter: host_name != ""\n"
-                     "Columns: time host_groups host_name service_description state\n"
-                     "OutputFormat: json\n\n",
-                     site["address"],
-                     site["certificate"])
-        )
+        result = get_data("GET log\n"
+                          f"Filter: time >= {int(time.time() - config.EVENT_TIME)}\n"
+                          "Filter: host_name != ""\n"
+                          "Columns: time host_groups host_name service_description state\n"
+                          "OutputFormat: json\n\n",
+                          site["address"],
+                          site["certificate"])
+
+        if not result:
+            continue
+
+        result = json.loads(result)
+
         for event_list in result:
             event_list.insert(0, site["name"])
             event_list.insert(0, "temp_id")
@@ -92,20 +107,24 @@ def do_events():
     send_data("/checkmk-event", events, get_oath_token())
 
 
-def do_perf():
+def do_performance():
     # Get performance data
     services = {"services": []}
     keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "perf_data", "event_state"]
 
     for site in config.SITES:
-        result = json.loads(
-            get_data("GET services\n"
-                     "Filter: host_name != ""\n"
-                     "Columns: host_groups host_name service_description perf_data state\n"
-                     "OutputFormat: json\n\n",
-                     site["address"],
-                     site["certificate"])
-        )
+        result = get_data("GET services\n"
+                          "Filter: host_name != ""\n"
+                          "Columns: host_groups host_name service_description perf_data state\n"
+                          "OutputFormat: json\n\n",
+                          site["address"],
+                          site["certificate"])
+
+        if not result:
+            continue
+
+        result = json.loads(result)
+
         for service_list in result:
             service_list.insert(0, int(time.time()))
             service_list.insert(0, site["name"])
@@ -113,7 +132,7 @@ def do_perf():
 
             dic = dict(zip(keys, service_list))
 
-            dic["id"] = f"{site['name']}_{dic['timestamp'] }_{dic['hostname']}_{dic['service_description']}"
+            dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
             dic["timestamp"] = dic["timestamp"] * 1000
 
             services["services"].append(dic)
@@ -137,7 +156,7 @@ def main():
         do_events()
     elif args['data'] == "performance":
         print("Retrieving performance data ...")
-        do_perf()
+        do_performance()
     else:
         print("Invalid input, use event / performance for the --data input")
 
