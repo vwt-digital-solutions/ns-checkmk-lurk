@@ -95,23 +95,26 @@ def do_events():
 def do_perf():
     # Get performance data
     services = {"services": []}
-    keys = ["id", "name", "host_groups", "hostname", "service_description", "perf_data", "event_state"]
+    keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "perf_data", "event_state"]
 
     for site in config.SITES:
         result = json.loads(
             get_data("GET services\n"
                      "Filter: host_name != ""\n"
                      "Columns: host_groups host_name service_description perf_data state\n"
-                     "OutputFormat: json\n",
-                     site["address"])
+                     "OutputFormat: json\n\n",
+                     site["address"],
+                     site["certificate"])
         )
         for service_list in result:
+            service_list.insert(0, int(time.time()))
             service_list.insert(0, site["name"])
             service_list.insert(0, "temp_id")
 
             dic = dict(zip(keys, service_list))
 
-            dic["id"] = f"{site['name']}_{dic['hostname']}_{dic['service_description']}"
+            dic["id"] = f"{site['name']}_{dic['timestamp'] }_{dic['hostname']}_{dic['service_description']}"
+            dic["timestamp"] = dic["timestamp"] * 1000
 
             services["services"].append(dic)
 
