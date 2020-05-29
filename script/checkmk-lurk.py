@@ -42,13 +42,13 @@ def get_data(query, address, certificate):
     # TODO if site is down send message to API notifying it that the site is down
     except TimeoutError:
         print(f"Timeout, site with address {address} is possibly offline")
-        return False
+        return None
     except ConnectionRefusedError:
         print(f"Connection refused, site with address {address} is possibly offline")
-        return False
+        return None
     except ssl.SSLCertVerificationError:
-        print(f"Certificate verification error, site site with address {address} with certificate {certificate}")
-        return False
+        print(f"Certificate verification error, site with address {address} with certificate {certificate}")
+        return None
 
     sock.send(query.encode("utf-8"))
 
