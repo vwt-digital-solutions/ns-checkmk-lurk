@@ -138,7 +138,7 @@ def do_performance():
             services["services"].append(dic)
 
     # Send services
-    send_data("/checkmk-services", services, get_oath_token())
+    send_data("/checkmk-performance", services, get_oath_token())
 
 
 # Main function of the script
