@@ -104,7 +104,7 @@ def do_events():
             events["events"].append(dic)
 
     # Send events
-    send_data("/checkmk-event", events, get_oath_token())
+    send_data("/checkmk-events", events, get_oath_token())
 
 
 def do_performance():
@@ -138,7 +138,7 @@ def do_performance():
             services["services"].append(dic)
 
     # Send services
-    send_data("/checkmk-performance", services, get_oath_token())
+    send_data("/checkmk-performances", services, get_oath_token())
 
 
 # Main function of the script
