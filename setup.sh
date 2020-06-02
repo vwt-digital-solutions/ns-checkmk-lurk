@@ -33,7 +33,7 @@ function install_perf_cron {
 
   #write entry's to file
   echo "# Crontab for retrieving performance data every 5 minutes" >> checkmk-lurk-perf
-  echo "/5 * * * * /usr/bin/env python3 $(pwd)/script/checkmk-lurk.py --data performance" >> checkmk-lurk-perf
+  echo "*/5 * * * * /usr/bin/env python3 $(pwd)/script/checkmk-lurk.py --data performance" >> checkmk-lurk-perf
 
   # install new cron
   crontab checkmk-lurk-perf
