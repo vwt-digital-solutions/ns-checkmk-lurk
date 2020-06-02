@@ -11,6 +11,7 @@ In the config file you will specify where Checkmk Lurk needs to obtain it's data
 ### Add a server
 In the config we can add the servers where we want to get the data from. In the example below is shown how to configure the script when using external servers with or without TLS and how to configure it for sites that use the namesocket.
 
+The site certificates are located here `etc/ssl/sites/[site].pem`
 ```
 SITES = [
     {"name": "SiteName1", "address": "/omd/sites/<site_name>/tmp/run/live", "certificate": None}, # Local namesocket
