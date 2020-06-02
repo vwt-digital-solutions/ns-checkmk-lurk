@@ -13,7 +13,7 @@ dpkg -l | grep -qw python3-pip || no_pip
 
 # installing the requirements
 echo "installing the python requirements ..."
-sudo python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 
 echo "installing crontabs ..."
 # Write out current crontab
