@@ -20,8 +20,10 @@ echo "installing crontabs ..."
 crontab -l > checkmk-lurk
 
 # echo new cron lines into cron file
-echo "*/5 * * * * /usr/bin/env python3 $(pwd)/checkmk-lurk.py --data performance" >> checkmk-lurk
-echo "* * * * * /usr/bin/env python3 $(pwd)/checkmk-lurk.py --data event" >> checkmk-lurk
+echo "# Crontab for retrieving performance data every 5 minutes" >> checkmk-lurk
+echo "*/5 * * * * /usr/bin/env python3 $(pwd)/script/checkmk-lurk.py --data performance" >> checkmk-lurk
+echo "# Crontab for retrieving event data every minute" >> checkmk-lurk
+echo "* * * * * /usr/bin/env python3 $(pwd)/script/checkmk-lurk.py --data event" >> checkmk-lurk
 
 # install new cron
 crontab checkmk-lurk
