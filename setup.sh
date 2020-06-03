@@ -54,8 +54,8 @@ python3 -m pip install -r requirements.txt
 echo "Checking if crontabs are already installed ..."
 
 # check for performance data crontab
-crontab -l -u dwesteneng | grep $(pwd)'/script/checkmk-lurk.py --data performance' && echo "performance crontab already installed!" || install_perf_cron
+crontab -l | grep $(pwd)'/script/checkmk-lurk.py --data performance' && echo "performance crontab already installed!" || install_perf_cron
 # check for event data crontab
-crontab -l -u dwesteneng | grep $(pwd)'/script/checkmk-lurk.py --data event' && echo "event crontab already installed!" || install_event_cron
+crontab -l | grep $(pwd)'/script/checkmk-lurk.py --data event' && echo "event crontab already installed!" || install_event_cron
 
 echo "setup completed!"
