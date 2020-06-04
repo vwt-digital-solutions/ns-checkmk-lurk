@@ -2,6 +2,7 @@ import argparse
 import json
 import ssl
 import time
+from ast import literal_eval
 
 import config
 
@@ -72,6 +73,39 @@ def send_data(path, data, token):
     return request.status_code == 201
 
 
+def convert_int_or_float(value):
+    return literal_eval(value) if value != "" else value
+
+
+def parse_perf_data(data):
+    ret = []
+
+    variables = data.split(" ")
+
+    for variable in variables:
+        var_name = variable.split("=")[0]
+        var_value = variable.split("=")[1]
+
+        values = var_value.split(";")
+
+        if len(values) == 5:
+            ret.append({
+                "var_name": var_name,
+                "actual": convert_int_or_float(values[0]),
+                "warning": convert_int_or_float(values[1]),
+                "critical": convert_int_or_float(values[2]),
+                "min": convert_int_or_float(values[3]),
+                "max": convert_int_or_float(values[4]),
+            })
+        else:
+            ret.append({
+                "var_name": var_name,
+                "actual": convert_int_or_float(values[0])
+            })
+
+    return ret
+
+
 def do_events():
     # Get events
     events = {"events": []}
@@ -112,7 +146,7 @@ def do_events():
 def do_performance():
     # Get performance data
     services = {"services": []}
-    keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "perf_data", "event_state"]
+    keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "perf_data", "service_state"]
 
     for site in config.SITES:
         result = get_data("GET services\n"
@@ -136,6 +170,7 @@ def do_performance():
 
             dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
             dic["timestamp"] = dic["timestamp"] * 1000
+            dic["perf_data"] = parse_perf_data(dic["perf_data"]) if dic["perf_data"] != "" else dic["perf_data"]
 
             services["services"].append(dic)
 
