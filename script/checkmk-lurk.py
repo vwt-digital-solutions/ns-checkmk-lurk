@@ -75,14 +75,15 @@ def send_data(path, data, token):
 def do_events():
     # Get events
     events = {"events": []}
-    keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "event_state"]
+    keys = ["id", "name", "timestamp", "type", "hostname", "service_description", "state_type", "output", "long-output"]
 
     # Foreach site get event data and add to events dict
     for site in config.SITES:
         result = get_data("GET log\n"
                           f"Filter: time >= {int(time.time() - config.EVENT_TIME)}\n"
                           "Filter: host_name != ""\n"
-                          "Columns: time host_groups host_name service_description state\n"
+                          "Columns: time type host_name service_description state_type plugin_output "
+                          "long_plugin_output\n"
                           "OutputFormat: json\n\n",
                           site["address"],
                           site["certificate"])
