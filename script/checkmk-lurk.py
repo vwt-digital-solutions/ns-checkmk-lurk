@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import ssl
 import time
 from ast import literal_eval
@@ -42,13 +43,13 @@ def get_data(query, address, certificate):
         sock.connect(address)
     # TODO if site is down send message to API notifying it that the site is down
     except TimeoutError:
-        print(f"Timeout, site with address {address} is possibly offline")
+        logging.info(f"Timeout, site with address {address} is possibly offline")
         return None
     except ConnectionRefusedError:
-        print(f"Connection refused, site with address {address} is possibly offline")
+        logging.info(f"Connection refused, site with address {address} is possibly offline")
         return None
     except ssl.SSLCertVerificationError:
-        print(f"Certificate verification error, site with address {address} with certificate {certificate}")
+        logging.info(f"Certificate verification error, site with address {address} with certificate {certificate}")
         return None
 
     sock.send(query.encode("utf-8"))
@@ -69,6 +70,8 @@ def send_data(path, data, token):
     request = requests.post(config.API_URL + path,
                             json=data,
                             headers=headers)
+
+    logging.info(f"Sent data to API. Response status code: {request.status_code}")
 
     return request.status_code == 201
 
@@ -140,6 +143,7 @@ def do_events():
             events["events"].append(dic)
 
     # Send events
+    logging.info(f"Sending {len(events['events'])} events to API.")
     send_data("/checkmk-events", events, get_oath_token())
 
 
@@ -175,6 +179,7 @@ def do_performance():
             services["services"].append(dic)
 
     # Send services
+    logging.info(f"Sending {len(services['services'])} services to API.")
     send_data("/checkmk-performances", services, get_oath_token())
 
 
@@ -182,6 +187,11 @@ def do_performance():
 def main():
     # Construct argument parser
     ap = argparse.ArgumentParser()
+    logging.basicConfig(
+        filename=config.LOGGING_FILE,
+        level=logging.DEBUG if config.LOGGING_DEBUG else logging.INFO,
+        format='%(asctime)s %(levelname)s\t| %(message)s',
+        datefmt='%d/%m/%Y %H:%M:%S')
 
     # Add the arguments to the parser
     ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance")
@@ -189,13 +199,13 @@ def main():
 
     # Check which data should be retrieved
     if args['data'] == "event":
-        print("Retrieving event data ...")
+        logging.info("Retrieving event data.")
         do_events()
     elif args['data'] == "performance":
-        print("Retrieving performance data ...")
+        logging.info("Retrieving performance data.")
         do_performance()
     else:
-        print("Invalid input, use event / performance for the --data input")
+        logging.info("Invalid argument is specified.")
 
 
 if __name__ == "__main__":

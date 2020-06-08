@@ -39,6 +39,19 @@ Events made within this time frame will be collected, the time is in seconds so 
 
 `EVENT_TIME = 300` 
 
+### Logging
+It is also possible to select the logging level and where the logs should be stored to.
+
+This is where you should specify the logfile. 
+
+`LOGGING_FILE = """`
+
+Set this boolean to True or False depending on if you want debug log level enabled or not.
+
+`LOGGING_DEBUG = True`
+
+
+
 ## 3. Rename and rights
 Once the configuration file is configured correctly you need to run the following commands in order to run the setup.
 
