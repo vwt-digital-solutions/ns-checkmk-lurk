@@ -61,4 +61,4 @@ Once the configuration file is configured correctly you need to run the followin
 ## 4. Run the setup
 This will setup the crontabs and install the python modules.
 
-`sudo ./setup.sh`
+`./setup.sh`
