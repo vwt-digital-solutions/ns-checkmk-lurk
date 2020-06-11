@@ -77,7 +77,12 @@ def send_data(path, data, token):
 
 
 def convert_int_or_float(value):
-    return literal_eval(value) if value != "" else value
+    try:
+        return literal_eval(value)
+    except SyntaxError:
+        return value
+    except ValueError:
+        return value
 
 
 def parse_perf_data(data):
