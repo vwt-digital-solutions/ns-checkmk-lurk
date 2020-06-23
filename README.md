@@ -44,7 +44,7 @@ It is also possible to select the logging level and where the logs should be sto
 
 This is where you should specify the logfile. 
 
-`LOGGING_FILE = """`
+`LOGGING_FILE = ""`
 
 Set this boolean to True or False depending on if you want debug log level enabled or not.
 

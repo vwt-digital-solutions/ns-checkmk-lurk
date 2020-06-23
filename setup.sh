@@ -15,7 +15,7 @@ function install_event_cron {
 
   #write entry's to file
   echo "# Crontab for retrieving event data every minute" >> checkmk-lurk-event
-  echo "* * * * * /usr/bin/env python3 $(pwd)/script/checkmk-lurk.py --data event" >> checkmk-lurk-event
+  echo "* * * * * /usr/bin/env python3 $(pwd)/script/checkmk_lurk.py --data event" >> checkmk-lurk-event
 
   # install new cron
   crontab checkmk-lurk-event
@@ -33,7 +33,7 @@ function install_perf_cron {
 
   #write entry's to file
   echo "# Crontab for retrieving performance data every 5 minutes" >> checkmk-lurk-perf
-  echo "*/5 * * * * /usr/bin/env python3 $(pwd)/script/checkmk-lurk.py --data performance" >> checkmk-lurk-perf
+  echo "*/5 * * * * /usr/bin/env python3 $(pwd)/script/checkmk_lurk.py --data performance" >> checkmk-lurk-perf
 
   # install new cron
   crontab checkmk-lurk-perf
@@ -54,7 +54,7 @@ python3 -m pip install -r requirements.txt
 echo "Checking if crontabs are already installed ..."
 
 # check for performance data crontab
-if crontab -l | grep "$(pwd)/script/checkmk-lurk.py --data performance" -q;
+if crontab -l | grep "$(pwd)/script/checkmk_lurk.py --data performance" -q;
 then
   echo "performance crontab already installed!"
 else
@@ -62,7 +62,7 @@ else
 fi
 
 # check for event data crontab
-if crontab -l | grep "$(pwd)/script/checkmk-lurk.py --data event" -q;
+if crontab -l | grep "$(pwd)/script/checkmk_lurk.py --data event" -q;
 then
   echo "performance crontab already installed!"
 else
