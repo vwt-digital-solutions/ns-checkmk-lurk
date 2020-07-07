@@ -158,6 +158,9 @@ def do_performance():
     for site in config.SITES:
         result = get_data("GET services\n"
                           "Filter: host_name != ""\n"
+                          "Filter: perf_data != ""\n"
+                          "Filter: perf_data != null\n"
+                          "And: 3\n"
                           "Columns: host_groups host_name service_description perf_data state\n"
                           "OutputFormat: json\n\n",
                           site["address"],
