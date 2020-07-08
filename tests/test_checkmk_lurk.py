@@ -1,7 +1,9 @@
 import re
+import json
+import config
 import unittest
 
-from script.checkmk_lurk import *
+from lurk.checkmk_lurk import get_data, get_oath_token, send_data, parse_perf_data
 
 
 class TestApiMethods(unittest.TestCase):

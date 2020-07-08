@@ -3,13 +3,11 @@ import json
 import logging
 import ssl
 import time
-from ast import literal_eval
-
 import config
-
 import requests
-
 import socket
+
+from ast import literal_eval
 
 
 def get_oath_token():
