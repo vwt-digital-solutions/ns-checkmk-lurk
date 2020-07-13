@@ -60,6 +60,13 @@ def get_data(query, address, certificate):
     return "".join(item.decode("utf-8") for item in data)
 
 
+def get_data_web_api(domain, site, action, username, secret, ca_certificate):
+    url = f"https://{domain}/{site}/check_mk/webapi.py?action={action}&_username={username}&_secret={secret}" \
+          f"&output_format=json"
+
+    return requests.get(url, verify=(True if not ca_certificate else ca_certificate)).json()
+
+
 def send_data(path, data, token):
     headers = {
         "Authorization": f"Bearer {token}"
@@ -189,6 +196,40 @@ def do_performance():
     send_data("/checkmk-performances", services, get_oath_token())
 
 
+def do_hosts():
+    hosts = {"hosts": []}
+
+    for site in config.SITES:
+        # Get hosts
+        output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
+                                  site["ca-certificate"])
+
+        # Parse hosts
+        for host in output["result"]:
+            try:
+                hosts["hosts"].append(
+                    {
+                        "name": site["name"],
+                        "hostname": host,
+                        "address": site["web-domain"],
+                        "_LONG": output["result"][host]["attributes"]["_LONG"],
+                        "_LAT": output["result"][host]["attributes"]["_LAT"]
+                    }
+                )
+            except KeyError:
+                hosts["hosts"].append(
+                    {
+                        "name": site["name"],
+                        "hostname": host,
+                        "address": site["web-domain"],
+                    }
+                )
+
+    # Send hosts
+    logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
+    send_data("/checkmk-hosts", hosts, get_oath_token())
+
+
 # Main function of the script
 def main():
     # Construct argument parser
@@ -210,6 +251,9 @@ def main():
     elif args['data'] == "performance":
         logging.info("Retrieving performance data.")
         do_performance()
+    elif args['data'] == "host":
+        logging.info("Retrieving host data.")
+        do_hosts()
     else:
         logging.info("Invalid argument is specified.")
 
