@@ -1,72 +1,99 @@
 #!/bin/bash
 
-# function for exiting script when pip is not installed
+# Function for exiting script when pip is not installed.
 function no_pip {
-  echo -e "\e[31mpython3-pip is not installed, run apt-get install python3-pip, and try again!\e[0m" 
+  echo -e "python3-pip is not installed, run apt-get install python3-pip, and try again!"
   exit	
 }
 
-# function for installing the event crontab
+# Function for installing the event crontab.
 function install_event_cron {
-  echo "event crontab not yet installed ..."
+  echo "Event crontab not yet installed..."
 
-  # write new crontab file
+  # Write new crontab file.
   crontab -l > checkmk-lurk-event
 
-  #write entry's to file
+  # Write entries to file.
   echo "# Crontab for retrieving event data every minute" >> checkmk-lurk-event
-  echo "* * * * * /usr/bin/env python3 $(pwd)/script/checkmk_lurk.py --data event" >> checkmk-lurk-event
+  echo "* * * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data event" >> checkmk-lurk-event
 
-  # install new cron
+  # Install new crontab.
   crontab checkmk-lurk-event
   rm checkmk-lurk-event
 
-  echo "event crontab installed!"
+  echo "Event crontab installed!"
 }
 
-# function for installing the performance crontab
+# Function for installing the performance crontab.
 function install_perf_cron {
-  echo "performance crontab not yet installed ..."
+  echo "Performance crontab not yet installed..."
 
-  # write new crontab file
+  # Write new crontab file.
   crontab -l > checkmk-lurk-perf
 
-  #write entry's to file
+  # Write entries to file.
   echo "# Crontab for retrieving performance data every 5 minutes" >> checkmk-lurk-perf
-  echo "*/5 * * * * /usr/bin/env python3 $(pwd)/script/checkmk_lurk.py --data performance" >> checkmk-lurk-perf
+  echo "*/5 * * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data performance" >> checkmk-lurk-perf
 
-  # install new cron
+  # Install new crontab.
   crontab checkmk-lurk-perf
   rm checkmk-lurk-perf
 
-  echo "performance crontab installed!"
+  echo "Performance crontab installed!"
 }
 
-# check if python3-pip is installed
-# if not, install it
+# Function for installing the host crontab.
+function install_host_cron {
+  echo "Host crontab not yet installed..."
+
+  # Write new crontab file.
+  crontab -l > checkmk-lurk-host
+
+  # Write entries to file.
+  echo "# Crontab for retrieving host data every day" >> checkmk-lurk-host
+  echo "0 0 * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data performance" >> checkmk-lurk-host
+
+  # Install new crontab.
+  crontab checkmk-lurk-host
+  rm checkmk-lurk-host
+
+  echo "Host crontab installed!"
+}
+
+# Check if python3-pip is installed if not install it.
 echo "checking if python3-pip is installed"
 dpkg -l | grep -qw python3-pip || no_pip
 
-# installing the requirements
+# Install the pip requirements.
 echo "installing the python requirements ..."
 python3 -m pip install -r requirements.txt
 
 echo "Checking if crontabs are already installed ..."
 
-# check for performance data crontab
-if crontab -l | grep "$(pwd)/script/checkmk_lurk.py --data performance" -q;
+# Check for performance data crontab.
+if crontab -l | grep "$(pwd)/lurk/checkmk_lurk.py --data performance" -q;
 then
-  echo "performance crontab already installed!"
+  echo "Performance crontab already installed!"
 else
   install_perf_cron
 fi
 
-# check for event data crontab
-if crontab -l | grep "$(pwd)/script/checkmk_lurk.py --data event" -q;
+# Check for event data crontab.
+if crontab -l | grep "$(pwd)/lurk/checkmk_lurk.py --data event" -q;
 then
-  echo "performance crontab already installed!"
+  echo "Event crontab already installed!"
 else
   install_perf_cron
 fi
 
-echo "setup completed!"
+# Check for host data crontab.
+if crontab -l | grep "$(pwd)/lurk/checkmk_lurk.py --data host" -q;
+then
+  echo "Host crontab already installed!"
+else
+  install_host_cron
+fi
+
+mv ./lurk/config.py.example ./lurk/config.py
+
+echo "Setup completed!"

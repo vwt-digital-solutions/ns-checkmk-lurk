@@ -62,12 +62,11 @@ Set this boolean to True or False depending on if you want debug log level enabl
 
 
 ## 3. Rename and rights
-Once the configuration file is configured correctly you need to run the following commands in order to run the setup.
+Once the configuration file is configured correctly you need to run the following command in order to run the setup.
 
-1. Rename the config.py.example file to config.py `mv ./script/config.py.example ./script/config.py`.
-2. Set executable permissions to the setup file `chmod +x ./setup.sh`.
+Set executable permissions to the setup file `chmod +x ./setup.sh`.
 
 ## 4. Run the setup
-This will setup the crontabs and install the python modules.
+This will setup the crontabs, install the python modules and change the config file name.
 
 `./setup.sh`
