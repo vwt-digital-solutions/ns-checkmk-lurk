@@ -41,13 +41,14 @@ def get_data(query, address, certificate):
         sock.connect(address)
     # TODO if site is down send message to API notifying it that the site is down
     except TimeoutError:
-        logging.info(f"Timeout, site with address {address} is possibly offline")
+        logging.info(f"LIVESTATUS | Timeout, site with address {address} is possibly offline.")
         return None
     except ConnectionRefusedError:
-        logging.info(f"Connection refused, site with address {address} is possibly offline")
+        logging.info(f"LIVESTATUS | Connection refused, site with address {address} is possibly offline.")
         return None
     except ssl.SSLCertVerificationError:
-        logging.info(f"Certificate verification error, site with address {address} with certificate {certificate}")
+        logging.info(f"LIVESTATUS | Certificate verification error, site with address {address} with certificate "
+                     f"{certificate}.")
         return None
 
     sock.send(query.encode("utf-8"))
@@ -63,8 +64,18 @@ def get_data(query, address, certificate):
 def get_data_web_api(domain, site, action, username, secret, ca_certificate):
     url = f"https://{domain}/{site}/check_mk/webapi.py?action={action}&_username={username}&_secret={secret}" \
           f"&output_format=json"
-
-    return requests.get(url, verify=(True if not ca_certificate else ca_certificate)).json()
+    try:
+        return requests.get(url, verify=(True if not ca_certificate else ca_certificate)).json()
+    except requests.exceptions.SSLError:
+        logging.info(f"WEB API | SSL Error, site ({site}) with domain {domain} with certificate {ca_certificate}.")
+        return None
+    except requests.exceptions.ConnectionError:
+        logging.info(f"WEB API | Connection error, site ({site}) with domain {domain} is possibly offline.")
+        return None
+    except json.decoder.JSONDecodeError:
+        logging.info(f"WEB API | JSON decode error, site ({site}) with domain {domain} is giving unexpected output "
+                     f"that's unparsable. Please check your username and secret.")
+        return None
 
 
 def send_data(path, data, token):
@@ -205,25 +216,26 @@ def do_hosts():
                                   site["ca-certificate"])
 
         # Parse hosts
-        for host in output["result"]:
-            try:
-                hosts["hosts"].append(
-                    {
-                        "name": site["name"],
-                        "hostname": host,
-                        "address": site["web-domain"],
-                        "_LONG": output["result"][host]["attributes"]["_LONG"],
-                        "_LAT": output["result"][host]["attributes"]["_LAT"]
-                    }
-                )
-            except KeyError:
-                hosts["hosts"].append(
-                    {
-                        "name": site["name"],
-                        "hostname": host,
-                        "address": site["web-domain"],
-                    }
-                )
+        if output:
+            for host in output["result"]:
+                try:
+                    hosts["hosts"].append(
+                        {
+                            "name": site["name"],
+                            "hostname": host,
+                            "address": site["web-domain"],
+                            "_LONG": output["result"][host]["attributes"]["_LONG"],
+                            "_LAT": output["result"][host]["attributes"]["_LAT"]
+                        }
+                    )
+                except KeyError:
+                    hosts["hosts"].append(
+                        {
+                            "name": site["name"],
+                            "hostname": host,
+                            "address": site["web-domain"],
+                        }
+                    )
 
     # Send hosts
     logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
