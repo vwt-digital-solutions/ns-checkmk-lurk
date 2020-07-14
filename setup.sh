@@ -51,7 +51,7 @@ function install_host_cron {
 
   # Write entries to file.
   echo "# Crontab for retrieving host data every day" >> checkmk-lurk-host
-  echo "0 0 * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data performance" >> checkmk-lurk-host
+  echo "0 0 * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data host" >> checkmk-lurk-host
 
   # Install new crontab.
   crontab checkmk-lurk-host
@@ -83,7 +83,7 @@ if crontab -l | grep "$(pwd)/lurk/checkmk_lurk.py --data event" -q;
 then
   echo "Event crontab already installed!"
 else
-  install_perf_cron
+  install_event_cron
 fi
 
 # Check for host data crontab.
