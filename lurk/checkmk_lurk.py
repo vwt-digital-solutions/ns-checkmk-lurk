@@ -230,7 +230,6 @@ def do_hosts():
                 for var in output["result"][host]["attributes"]:
                     hosts["hosts"][len(hosts["hosts"]) - 1][var] = output["result"][host]["attributes"][var]
 
-
     # Send hosts
     logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
     send_data("/checkmk-hosts", hosts, get_oath_token())
