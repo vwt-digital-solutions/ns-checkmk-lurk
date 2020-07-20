@@ -41,13 +41,13 @@ def get_data(query, address, certificate):
         sock.connect(address)
     # TODO if site is down send message to API notifying it that the site is down
     except TimeoutError:
-        logging.info(f"LIVESTATUS | Timeout, site with address {address} is possibly offline.")
+        logging.info(f"LIVESTATUS | Timeout Error, site with address {address} is possibly offline.")
         return None
     except ConnectionRefusedError:
-        logging.info(f"LIVESTATUS | Connection refused, site with address {address} is possibly offline.")
+        logging.info(f"LIVESTATUS | Connection Refused Error, site with address {address} is possibly offline.")
         return None
     except ssl.SSLCertVerificationError:
-        logging.info(f"LIVESTATUS | Certificate verification error, site with address {address} with certificate "
+        logging.info(f"LIVESTATUS | Certificate Verification Error, site with address {address} with certificate "
                      f"{certificate}.")
         return None
 
@@ -70,10 +70,10 @@ def get_data_web_api(domain, site, action, username, secret, ca_certificate):
         logging.info(f"WEB API | SSL Error, site ({site}) with domain {domain} with certificate {ca_certificate}.")
         return None
     except requests.exceptions.ConnectionError:
-        logging.info(f"WEB API | Connection error, site ({site}) with domain {domain} is possibly offline.")
+        logging.info(f"WEB API | Connection Error, site ({site}) with domain {domain} is possibly offline.")
         return None
     except json.decoder.JSONDecodeError:
-        logging.info(f"WEB API | JSON decode error, site ({site}) with domain {domain} is giving unexpected output "
+        logging.info(f"WEB API | JSON Decode Error, site ({site}) with domain {domain} is giving unexpected output "
                      f"that's unparsable. Please check your username and secret.")
         return None
 
@@ -218,24 +218,18 @@ def do_hosts():
         # Parse hosts
         if output:
             for host in output["result"]:
-                try:
-                    hosts["hosts"].append(
-                        {
-                            "name": site["name"],
-                            "hostname": host,
-                            "address": site["web-domain"],
-                            "_LONG": output["result"][host]["attributes"]["_LONG"],
-                            "_LAT": output["result"][host]["attributes"]["_LAT"]
-                        }
-                    )
-                except KeyError:
-                    hosts["hosts"].append(
-                        {
-                            "name": site["name"],
-                            "hostname": host,
-                            "address": site["web-domain"],
-                        }
-                    )
+
+                hosts["hosts"].append(
+                    {
+                        "name": site["name"],
+                        "hostname": host,
+                        "address": site["web-domain"],
+                    }
+                )
+
+                for var in output["result"][host]["attributes"]:
+                    hosts["hosts"][len(hosts["hosts"]) - 1][var] = output["result"][host]["attributes"][var]
+
 
     # Send hosts
     logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
