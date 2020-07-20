@@ -94,6 +94,4 @@ else
   install_host_cron
 fi
 
-mv ./lurk/config.py.example ./lurk/config.py
-
 echo "Setup completed!"

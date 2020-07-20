@@ -221,6 +221,7 @@ def do_hosts():
 
                 hosts["hosts"].append(
                     {
+                        "id": site["name"] + "_" + host,
                         "name": site["name"],
                         "hostname": host,
                         "address": site["web-domain"],
