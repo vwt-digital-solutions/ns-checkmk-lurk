@@ -41,13 +41,14 @@ def get_data(query, address, certificate):
         sock.connect(address)
     # TODO if site is down send message to API notifying it that the site is down
     except TimeoutError:
-        logging.info(f"Timeout, site with address {address} is possibly offline")
+        logging.info(f"LIVESTATUS | Timeout Error, site with address {address} is possibly offline.")
         return None
     except ConnectionRefusedError:
-        logging.info(f"Connection refused, site with address {address} is possibly offline")
+        logging.info(f"LIVESTATUS | Connection Refused Error, site with address {address} is possibly offline.")
         return None
     except ssl.SSLCertVerificationError:
-        logging.info(f"Certificate verification error, site with address {address} with certificate {certificate}")
+        logging.info(f"LIVESTATUS | Certificate Verification Error, site with address {address} with certificate "
+                     f"{certificate}.")
         return None
 
     sock.send(query.encode("utf-8"))
@@ -58,6 +59,23 @@ def get_data(query, address, certificate):
     sock.close()
 
     return "".join(item.decode("utf-8") for item in data)
+
+
+def get_data_web_api(domain, site, action, username, secret, ca_certificate):
+    url = f"https://{domain}/{site}/check_mk/webapi.py?action={action}&_username={username}&_secret={secret}" \
+          f"&output_format=json"
+    try:
+        return requests.get(url, verify=(True if not ca_certificate else ca_certificate)).json()
+    except requests.exceptions.SSLError:
+        logging.info(f"WEB API | SSL Error, site ({site}) with domain {domain} with certificate {ca_certificate}.")
+        return None
+    except requests.exceptions.ConnectionError:
+        logging.info(f"WEB API | Connection Error, site ({site}) with domain {domain} is possibly offline.")
+        return None
+    except json.decoder.JSONDecodeError:
+        logging.info(f"WEB API | JSON Decode Error, site ({site}) with domain {domain} is giving unexpected output "
+                     f"that's unparsable. Please check your username and secret.")
+        return None
 
 
 def send_data(path, data, token):
@@ -158,6 +176,9 @@ def do_performance():
     for site in config.SITES:
         result = get_data("GET services\n"
                           "Filter: host_name != ""\n"
+                          "Filter: perf_data != ""\n"
+                          "Filter: perf_data != null\n"
+                          "And: 3\n"
                           "Columns: host_groups host_name service_description perf_data state\n"
                           "OutputFormat: json\n\n",
                           site["address"],
@@ -186,6 +207,35 @@ def do_performance():
     send_data("/checkmk-performances", services, get_oath_token())
 
 
+def do_hosts():
+    hosts = {"hosts": []}
+
+    for site in config.SITES:
+        # Get hosts
+        output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
+                                  site["ca-certificate"])
+
+        # Parse hosts
+        if output:
+            for host in output["result"]:
+
+                hosts["hosts"].append(
+                    {
+                        "id": site["name"] + "_" + host,
+                        "name": site["name"],
+                        "hostname": host,
+                        "address": site["web-domain"],
+                    }
+                )
+
+                for var in output["result"][host]["attributes"]:
+                    hosts["hosts"][len(hosts["hosts"]) - 1][var] = output["result"][host]["attributes"][var]
+
+    # Send hosts
+    logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
+    send_data("/checkmk-hosts", hosts, get_oath_token())
+
+
 # Main function of the script
 def main():
     # Construct argument parser
@@ -207,6 +257,9 @@ def main():
     elif args['data'] == "performance":
         logging.info("Retrieving performance data.")
         do_performance()
+    elif args['data'] == "host":
+        logging.info("Retrieving host data.")
+        do_hosts()
     else:
         logging.info("Invalid argument is specified.")
 
