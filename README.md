@@ -5,7 +5,7 @@ A script to get data from Checkmk via Livestatus and send it to an API.
 # Installation
 ## 1. Clone Repository 
 Cloning is very easy and only requires one step on most of linux devices:
-`git clone https://github.com/vwt-digital/ns-checkmk-lurk.git `  
+`git clone https://github.com/vwt-digital-solutions/ns-checkmk-lurk.git `  
 ## 2. Edit config
 In the config file you will specify where Checkmk Lurk needs to obtain it's data from and where it should be send to.
 ### Add a server
