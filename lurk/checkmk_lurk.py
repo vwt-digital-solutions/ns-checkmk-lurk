@@ -224,7 +224,11 @@ def do_hosts():
                         "id": site["name"] + "_" + host,
                         "name": site["name"],
                         "hostname": host,
-                        "address": site["web-domain"],
+                        "hostgroups": json.loads(get_data("GET hosts\nColumns: groups\nOutputFormat: json\n\n",
+                                                          site["address"],
+                                                          site["certificate"]
+                                                          ))[0][0],
+                        "address": site["web-domain"]
                     }
                 )
 
@@ -247,7 +251,7 @@ def main():
         datefmt='%d/%m/%Y %H:%M:%S')
 
     # Add the arguments to the parser
-    ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance")
+    ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance / host")
     args = vars(ap.parse_args())
 
     # Check which data should be retrieved
