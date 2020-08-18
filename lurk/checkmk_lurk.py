@@ -107,6 +107,9 @@ def parse_perf_data(data):
     variables = data.split(" ")
 
     for variable in variables:
+        if variable == "":
+            continue
+
         var_name = variable.split("=")[0]
         var_value = variable.split("=")[1]
 
