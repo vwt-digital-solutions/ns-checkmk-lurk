@@ -30,6 +30,13 @@ SITES = [
 ```
 *NOTE:  If you have multiple sites on the same host be sure to use different ports for the livestatus connection, and list them seperatly in the server list.*
 
+### Host data location
+We need to save host data of each site so that we can check if a site has been decommissioned or not. You need to specify in the variable below in which directory the files need to be created. 
+
+*NOTE: The user running the crontab needs to have writing permissions to the specified directory.*
+
+`HOST_FILE_STORAGE = "./hosts""`
+
 ### API url
 This is the url of the API where the data will be send to.
 
