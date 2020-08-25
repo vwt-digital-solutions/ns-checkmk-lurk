@@ -212,11 +212,35 @@ def do_performance():
 
 def do_hosts():
     hosts = {"hosts": []}
+    changed_hosts = {}
 
     for site in config.SITES:
         # Get hosts
         output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
                                   site["ca-certificate"])
+
+        # Check if there are hosts gone (decommissioned)
+        # Load old hosts
+        try:
+            with open(config.HOST_FILE_STORAGE + f"/{site['name']}.json") as json_file:
+                old_hosts = json.load(json_file)
+        except FileNotFoundError:
+            old_hosts = None
+
+        if old_hosts:
+            # Make list of hosts that are no longer visible via the WEB API
+            difference = [host for host in old_hosts if host not in [host for host in output["result"]]]
+
+            if len(difference) > 0:
+                changed_hosts[site] = output
+
+            for host in difference:
+                hosts["hosts"].append({
+                    "id": site["name"] + "_" + host,
+                    "name": site["name"],
+                    "hostname": host,
+                    "decommissioned": True
+                })
 
         # Parse hosts
         if output:
@@ -241,7 +265,14 @@ def do_hosts():
 
     # Send hosts
     logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
-    send_data("/checkmk-hosts", hosts, get_oath_token())
+    sent = send_data("/checkmk-hosts", hosts, get_oath_token())
+
+    if sent:
+        # Data is successfully sent so now the host files can be updated to their current state
+        for site in changed_hosts:
+            # After deleted hosts are correctly added, update the file with host information
+            with open(config.HOST_FILE_STORAGE + f"/{site}.json", "w+") as file:
+                json.dump(changed_hosts[site], file)
 
 
 # Main function of the script
