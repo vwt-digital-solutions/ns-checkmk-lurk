@@ -219,6 +219,8 @@ def do_hosts():
         output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
                                   site["ca-certificate"])
 
+        changed_hosts[site["name"]] = output["result"]
+
         # Check if there are hosts gone (decommissioned)
         # Load old hosts
         try:
@@ -231,10 +233,9 @@ def do_hosts():
             # Make list of hosts that are no longer visible via the WEB API
             difference = [host for host in old_hosts if host not in [host for host in output["result"]]]
 
-            if len(difference) > 0:
-                changed_hosts[site] = output
-
             for host in difference:
+                logging.info(f"Decommissioned host found: {site['name']}_{host}")
+
                 hosts["hosts"].append({
                     "id": site["name"] + "_" + host,
                     "name": site["name"],
