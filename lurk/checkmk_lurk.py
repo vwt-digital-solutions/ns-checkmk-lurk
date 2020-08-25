@@ -231,7 +231,8 @@ def do_hosts():
                                                           site["address"],
                                                           site["certificate"]
                                                           ))[0][0],
-                        "address": site["web-domain"]
+                        "address": site["web-domain"],
+                        "decommissioned": False
                     }
                 )
 
