@@ -219,32 +219,32 @@ def do_hosts():
         output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
                                   site["ca-certificate"])
 
-        changed_hosts[site["name"]] = output["result"]
-
-        # Check if there are hosts gone (decommissioned)
-        # Load old hosts
-        try:
-            with open(config.HOST_FILE_STORAGE + f"/{site['name']}.json") as json_file:
-                old_hosts = json.load(json_file)
-        except FileNotFoundError:
-            old_hosts = None
-
-        if old_hosts:
-            # Make list of hosts that are no longer visible via the WEB API
-            difference = [host for host in old_hosts if host not in [host for host in output["result"]]]
-
-            for host in difference:
-                logging.info(f"Decommissioned host found: {site['name']}_{host}")
-
-                hosts["hosts"].append({
-                    "id": site["name"] + "_" + host,
-                    "name": site["name"],
-                    "hostname": host,
-                    "decommissioned": True
-                })
-
         # Parse hosts
         if output:
+            changed_hosts[site["name"]] = output["result"]
+
+            # Check if there are hosts gone (decommissioned)
+            # Load old hosts
+            try:
+                with open(config.HOST_FILE_STORAGE + f"/{site['name']}.json") as json_file:
+                    old_hosts = json.load(json_file)
+            except FileNotFoundError:
+                old_hosts = None
+
+            if old_hosts:
+                # Make list of hosts that are no longer visible via the WEB API
+                difference = [host for host in old_hosts if host not in [host for host in output["result"]]]
+
+                for host in difference:
+                    logging.info(f"Decommissioned host found: {site['name']}_{host}")
+
+                    hosts["hosts"].append({
+                        "id": site["name"] + "_" + host,
+                        "name": site["name"],
+                        "hostname": host,
+                        "decommissioned": True
+                    })
+
             for host in output["result"]:
 
                 hosts["hosts"].append(
@@ -268,7 +268,7 @@ def do_hosts():
     logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
     sent = send_data("/checkmk-hosts", hosts, get_oath_token())
 
-    if sent:
+    if sent and output:
         # Data is successfully sent so now the host files can be updated to their current state
         for site in changed_hosts:
             # After deleted hosts are correctly added, update the file with host information
