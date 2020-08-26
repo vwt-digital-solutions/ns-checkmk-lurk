@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import os
 import ssl
 import time
 import config
@@ -285,6 +286,20 @@ def main():
         level=logging.DEBUG if config.LOGGING_DEBUG else logging.INFO,
         format='%(asctime)s %(levelname)s\t| %(message)s',
         datefmt='%d/%m/%Y %H:%M:%S')
+
+    # Do checks if config.py is properly configured and if user running script is owner of config
+    current_user = os.getegid()
+    file_info = os.stat("./config.py")
+    permissions = int(oct(file_info.st_mode)[-3:])
+
+    if current_user != file_info.st_uid:
+        logging.info("User running the script isn't the owner of config.py. "
+                     "Please change the ownership or run under different user.")
+        return
+    if permissions != 600:
+        logging.info(f"Config.py has wrong file permissions. Please change them to 600. Current file permissions: "
+                     f"{permissions}")
+        return
 
     # Add the arguments to the parser
     ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance / host")
