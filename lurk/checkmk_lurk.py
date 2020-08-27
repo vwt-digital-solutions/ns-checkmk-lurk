@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import ssl
+import sys
 import time
 import config
 import requests
@@ -295,11 +296,11 @@ def main():
     if current_user != file_info.st_uid:
         logging.info("User running the script isn't the owner of config.py. "
                      "Please change the ownership or run under different user.")
-        return
+        return 1
     if permissions != 600:
         logging.info(f"Config.py has wrong file permissions. Please change them to 600. Current file permissions: "
                      f"{permissions}")
-        return
+        return 1
 
     # Add the arguments to the parser
     ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance / host")
@@ -317,7 +318,9 @@ def main():
         do_hosts()
     else:
         logging.info("Invalid argument is specified.")
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

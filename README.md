@@ -74,6 +74,6 @@ Once the configuration file is configured correctly you need to run the followin
 3. Change the permissions of the config so that no other users can access it `chmod 600 ./lurk/config.py`.
 
 ## 4. Run the setup
-This will setup the crontabs, install the python modules and change the config file name.
+This will setup the crontabs and install the python modules.
 
 `./setup.sh`
