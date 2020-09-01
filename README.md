@@ -30,6 +30,13 @@ SITES = [
 ```
 *NOTE:  If you have multiple sites on the same host be sure to use different ports for the livestatus connection, and list them seperatly in the server list.*
 
+### Host data location
+We need to save host data of each site so that we can check if a site has been decommissioned or not. You need to specify in the variable below in which directory the files need to be created. 
+
+*NOTE: The user running the crontab needs to have writing permissions to the specified directory.*
+
+`HOST_FILE_STORAGE = "./hosts"`
+
 ### API url
 This is the url of the API where the data will be send to.
 
@@ -64,8 +71,9 @@ Once the configuration file is configured correctly you need to run the followin
 
 1. Set executable permissions to the setup file `chmod +x ./setup.sh`.
 2. Change the config name `mv ./lurk/config.py.example ./lurk/config.py`.
+3. Change the permissions of the config so that no other users can access it `chmod 600 ./lurk/config.py`.
 
 ## 4. Run the setup
-This will setup the crontabs, install the python modules and change the config file name.
+This will setup the crontabs and install the python modules.
 
 `./setup.sh`

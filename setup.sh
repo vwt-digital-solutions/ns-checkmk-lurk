@@ -10,16 +10,11 @@ function no_pip {
 function install_event_cron {
   echo "Event crontab not yet installed..."
 
-  # Write new crontab file.
-  crontab -l > checkmk-lurk-event
-
   # Write entries to file.
-  echo "# Crontab for retrieving event data every minute" >> checkmk-lurk-event
-  echo "* * * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data event" >> checkmk-lurk-event
+  echo "# Crontab for retrieving event data every minute" >> ~/etc/cron.d/checkmk_lurk_event
+  echo "* * * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data event" >> ~/etc/cron.d/checkmk_lurk_event
 
-  # Install new crontab.
-  crontab checkmk-lurk-event
-  rm checkmk-lurk-event
+  omd restart crontab
 
   echo "Event crontab installed!"
 }
@@ -28,16 +23,11 @@ function install_event_cron {
 function install_perf_cron {
   echo "Performance crontab not yet installed..."
 
-  # Write new crontab file.
-  crontab -l > checkmk-lurk-perf
-
   # Write entries to file.
-  echo "# Crontab for retrieving performance data every 5 minutes" >> checkmk-lurk-perf
-  echo "*/5 * * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data performance" >> checkmk-lurk-perf
+  echo "# Crontab for retrieving performance data every 5 minutes" >> ~/etc/cron.d/checkmk_lurk_perf
+  echo "*/5 * * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data performance" >> ~/etc/cron.d/checkmk_lurk_perf
 
-  # Install new crontab.
-  crontab checkmk-lurk-perf
-  rm checkmk-lurk-perf
+  omd restart crontab
 
   echo "Performance crontab installed!"
 }
@@ -46,16 +36,11 @@ function install_perf_cron {
 function install_host_cron {
   echo "Host crontab not yet installed..."
 
-  # Write new crontab file.
-  crontab -l > checkmk-lurk-host
-
   # Write entries to file.
-  echo "# Crontab for retrieving host data every day" >> checkmk-lurk-host
-  echo "0 0 * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data host" >> checkmk-lurk-host
+  echo "# Crontab for retrieving host data every day" >> ~/etc/cron.d/checkmk_lurk_host
+  echo "0 0 * * * /usr/bin/env python3 $(pwd)/lurk/checkmk_lurk.py --data host" >> ~/etc/cron.d/checkmk_lurk_host
 
-  # Install new crontab.
-  crontab checkmk-lurk-host
-  rm checkmk-lurk-host
+  omd restart crontab
 
   echo "Host crontab installed!"
 }

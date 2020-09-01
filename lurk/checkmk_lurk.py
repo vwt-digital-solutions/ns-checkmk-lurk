@@ -1,7 +1,9 @@
 import argparse
 import json
 import logging
+import os
 import ssl
+import sys
 import time
 import config
 import requests
@@ -212,6 +214,7 @@ def do_performance():
 
 def do_hosts():
     hosts = {"hosts": []}
+    changed_hosts = {}
 
     for site in config.SITES:
         # Get hosts
@@ -220,6 +223,30 @@ def do_hosts():
 
         # Parse hosts
         if output:
+            changed_hosts[site["name"]] = output["result"]
+
+            # Check if there are hosts gone (decommissioned)
+            # Load old hosts
+            try:
+                with open(config.HOST_FILE_STORAGE + f"/{site['name']}.json") as json_file:
+                    old_hosts = json.load(json_file)
+            except FileNotFoundError:
+                old_hosts = None
+
+            if old_hosts:
+                # Make list of hosts that are no longer visible via the WEB API
+                difference = [host for host in old_hosts if host not in [host for host in output["result"]]]
+
+                for host in difference:
+                    logging.info(f"Decommissioned host found: {site['name']}_{host}")
+
+                    hosts["hosts"].append({
+                        "id": site["name"] + "_" + host,
+                        "name": site["name"],
+                        "hostname": host,
+                        "decommissioned": True
+                    })
+
             for host in output["result"]:
 
                 hosts["hosts"].append(
@@ -231,7 +258,8 @@ def do_hosts():
                                                           site["address"],
                                                           site["certificate"]
                                                           ))[0][0],
-                        "address": site["web-domain"]
+                        "address": site["web-domain"],
+                        "decommissioned": False
                     }
                 )
 
@@ -240,7 +268,14 @@ def do_hosts():
 
     # Send hosts
     logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
-    send_data("/checkmk-hosts", hosts, get_oath_token())
+    sent = send_data("/checkmk-hosts", hosts, get_oath_token())
+
+    if sent and output:
+        # Data is successfully sent so now the host files can be updated to their current state
+        for site in changed_hosts:
+            # After deleted hosts are correctly added, update the file with host information
+            with open(config.HOST_FILE_STORAGE + f"/{site}.json", "w+") as file:
+                json.dump(changed_hosts[site], file)
 
 
 # Main function of the script
@@ -252,6 +287,20 @@ def main():
         level=logging.DEBUG if config.LOGGING_DEBUG else logging.INFO,
         format='%(asctime)s %(levelname)s\t| %(message)s',
         datefmt='%d/%m/%Y %H:%M:%S')
+
+    # Do checks if config.py is properly configured and if user running script is owner of config
+    current_user = os.getegid()
+    file_info = os.stat("./config.py")
+    permissions = int(oct(file_info.st_mode)[-3:])
+
+    if current_user != file_info.st_uid:
+        logging.info("User running the script isn't the owner of config.py. "
+                     "Please change the ownership or run under different user.")
+        return 1
+    if permissions != 600:
+        logging.info(f"Config.py has wrong file permissions. Please change them to 600. Current file permissions: "
+                     f"{permissions}")
+        return 1
 
     # Add the arguments to the parser
     ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance / host")
@@ -269,7 +318,9 @@ def main():
         do_hosts()
     else:
         logging.info("Invalid argument is specified.")
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
