@@ -216,6 +216,7 @@ def do_hosts():
     hosts = {"hosts": []}
     changed_hosts = {}
 
+    current_time = int(time.time() * 1000)
     for site in config.SITES:
         # Get hosts
         output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
@@ -244,7 +245,8 @@ def do_hosts():
                         "id": site["name"] + "_" + host,
                         "name": site["name"],
                         "hostname": host,
-                        "decommissioned": True
+                        "decommissioned": True,
+                        "timestamp": current_time
                     })
 
             for host in output["result"]:
@@ -259,7 +261,8 @@ def do_hosts():
                                                           site["certificate"]
                                                           ))[0][0],
                         "address": site["web-domain"],
-                        "decommissioned": False
+                        "decommissioned": False,
+                        "timestamp": current_time
                     }
                 )
 
