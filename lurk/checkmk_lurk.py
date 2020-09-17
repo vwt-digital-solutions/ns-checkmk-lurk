@@ -293,7 +293,7 @@ def main():
 
     # Do checks if config.py is properly configured and if user running script is owner of config
     current_user = os.getegid()
-    file_info = os.stat("./config.py")
+    file_info = os.stat(os.path.dirname(__file__) + "/config.py")
     permissions = int(oct(file_info.st_mode)[-3:])
 
     if current_user != file_info.st_uid:
