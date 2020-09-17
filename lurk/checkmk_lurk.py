@@ -10,6 +10,7 @@ import requests
 import socket
 
 from ast import literal_eval
+from pympler.asizeof import asizeof
 
 
 def get_oath_token():
@@ -137,7 +138,8 @@ def parse_perf_data(data):
 
 def do_events():
     # Get events
-    events = {"events": []}
+    counter = 0
+    events = {"events-0": []}
     keys = ["id", "name", "timestamp", "type", "hostname", "service_description", "state_type", "output", "long_output",
             "event_state"]
 
@@ -166,16 +168,28 @@ def do_events():
             dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
             dic["timestamp"] = dic["timestamp"] * 1000
 
-            events["events"].append(dic)
+            if (asizeof(events[f"events-{counter}"]) + asizeof(dic)) / 1000000 > 8.0:
+                counter += 1
+                events[f"events-{counter}"] = []
+                events[f"events-{counter}"].append(dic)
+
+                logging.info(f"List is full!")
+            else:
+                events[f"events-{counter}"].append(dic)
+                print(asizeof(events[f"events-{counter}"]))
 
     # Send events
-    logging.info(f"Sending {len(events['events'])} events to API.")
-    send_data("/checkmk-events", events, get_oath_token())
+    for key, value in events.items():
+        logging.info(f"Sending events to API.")
+        print("Sending data to odh!")
+        request_data = {"events": value}
+        send_data("/checkmk-events", request_data, get_oath_token())
 
 
 def do_performance():
     # Get performance data
-    services = {"services": []}
+    counter = 0
+    services = {"services-0": []}
     keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "perf_data", "service_state"]
 
     for site in config.SITES:
@@ -205,11 +219,21 @@ def do_performance():
             dic["timestamp"] = dic["timestamp"] * 1000
             dic["perf_data"] = parse_perf_data(dic["perf_data"]) if dic["perf_data"] != "" else dic["perf_data"]
 
-            services["services"].append(dic)
+            if (asizeof(services[f"services-{counter}"]) + asizeof(dic)) / 1000000 > 8.0:
+                counter += 1
+                services[f"services-{counter}"] = []
+                services[f"services-{counter}"].append(dic)
+
+                logging.info(f"List is full!")
+            else:
+                services[f"services-{counter}"].append(dic)
+                print(asizeof(services[f"services-{counter}"]))
 
     # Send services
-    logging.info(f"Sending {len(services['services'])} services to API.")
-    send_data("/checkmk-performances", services, get_oath_token())
+    for key, value in services.items():
+        logging.info(f"Sending performance-data to API.")
+        request_data = {"services": value}
+        send_data("/checkmk-performances", request_data, get_oath_token())
 
 
 def do_hosts():
@@ -293,7 +317,7 @@ def main():
 
     # Do checks if config.py is properly configured and if user running script is owner of config
     current_user = os.getegid()
-    file_info = os.stat(os.path.dirname(__file__) + "/config.py")
+    file_info = os.stat(os.path.dirname(__file__) + "config.py")
     permissions = int(oct(file_info.st_mode)[-3:])
 
     if current_user != file_info.st_uid:
