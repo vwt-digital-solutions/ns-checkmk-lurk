@@ -147,12 +147,11 @@ def parse_size(data):
         new = {list_name: []}
 
         for item in data[list_name]:
-            if (asizeof(new) / mb_size) + (asizeof(item) / mb_size) > max_size:
+            new[list_name].append(item)
+            if asizeof(new) / mb_size > max_size:
+                del new[list_name][-1]
                 output_list.append(deepcopy(new))
                 new[list_name] = [item]
-            else:
-                new[list_name].append(item)
-
         output_list.append(deepcopy(new))
         return output_list
     else:
