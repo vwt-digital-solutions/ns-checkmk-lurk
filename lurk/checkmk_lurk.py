@@ -155,7 +155,7 @@ def parse_size(data):
         output_list.append(deepcopy(new))
         return output_list
     else:
-        return list(data)
+        return [data]
 
 
 def do_events():
