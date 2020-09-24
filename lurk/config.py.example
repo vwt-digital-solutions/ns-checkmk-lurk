@@ -1,0 +1,24 @@
+EVENT_TIME = 300
+
+LOGGING_FILE = "./app.log"
+LOGGING_DEBUG = False
+
+HOST_FILE_STORAGE = "./hosts/"
+
+OAUTH_CLIENT_ID = ""
+OAUTH_CLIENT_SECRET = ""
+OAUTH_CLIENT_SCOPE = ""
+OAUTH_TOKEN_URL = ""
+
+API_URL = ""
+
+SITES = [
+    {"name": "SiteName1", "address": "/omd/sites/slave1/tmp/run/live", "certificate": None, "web-domain": "localhost",
+    "username": "automation", "secret": "secret-key", "ca-certificate": None},  # Local namesocket
+
+    {"name": "SiteName2", "address": ("127.0.0.1", 6557), "certificate": "./certs/cert.pem", "web-domain": "main.server.com",
+    "username": "automation", "secret": "secret-key", "ca-certificate": "./certs/ca-certificates.crt"},  # External site with TLS
+
+    {"name": "SiteName3", "address": ("127.0.0.1", 6557), "certificate": None, "web-domain": "127.0.0.1",
+    "username": "automation", "secret": "secret-key", "ca-certificate": "./certs/ca-certificates.crt"}  # External site without TLS
+]

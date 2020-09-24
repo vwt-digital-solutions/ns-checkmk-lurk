@@ -11,6 +11,7 @@ import socket
 
 from ast import literal_eval
 from pympler.asizeof import asizeof
+from copy import deepcopy
 
 
 def get_oath_token():
@@ -136,10 +137,31 @@ def parse_perf_data(data):
     return ret
 
 
+def parse_size(data):
+    mb_size = 1000000
+    max_size = 8.0
+    output_list = []
+
+    if (asizeof(data) / mb_size) > max_size:
+        list_name = list(data.keys())[0]
+        new = {list_name: []}
+
+        for item in data[list_name]:
+            if (asizeof(new) / mb_size) + (asizeof(item) / mb_size) > max_size:
+                output_list.append(deepcopy(new))
+                new[list_name] = [item]
+            else:
+                new[list_name].append(item)
+
+        output_list.append(deepcopy(new))
+        return output_list
+    else:
+        return list(data)
+
+
 def do_events():
     # Get events
-    counter = 0
-    events = {"events-0": []}
+    events = {"events": []}
     keys = ["id", "name", "timestamp", "type", "hostname", "service_description", "state_type", "output", "long_output",
             "event_state"]
 
@@ -168,28 +190,19 @@ def do_events():
             dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
             dic["timestamp"] = dic["timestamp"] * 1000
 
-            if (asizeof(events[f"events-{counter}"]) + asizeof(dic)) / 1000000 > 8.0:
-                counter += 1
-                events[f"events-{counter}"] = []
-                events[f"events-{counter}"].append(dic)
-
-                logging.info("List is full!")
-            else:
-                events[f"events-{counter}"].append(dic)
-                print(asizeof(events[f"events-{counter}"]))
+            events["events"].append(dic)
 
     # Send events
-    for key, value in events.items():
-        logging.info("Sending events to API.")
-        print("Sending data to odh!")
-        request_data = {"events": value}
-        send_data("/checkmk-events", request_data, get_oath_token())
+    size_parsed = parse_size(events)
+
+    for events in size_parsed:
+        logging.info(f"Sending {len(events['events'])} events to API.")
+        send_data("/checkmk-events", events, get_oath_token())
 
 
 def do_performance():
     # Get performance data
-    counter = 0
-    services = {"services-0": []}
+    services = {"services": []}
     keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "perf_data", "service_state"]
 
     for site in config.SITES:
@@ -219,21 +232,14 @@ def do_performance():
             dic["timestamp"] = dic["timestamp"] * 1000
             dic["perf_data"] = parse_perf_data(dic["perf_data"]) if dic["perf_data"] != "" else dic["perf_data"]
 
-            if (asizeof(services[f"services-{counter}"]) + asizeof(dic)) / 1000000 > 8.0:
-                counter += 1
-                services[f"services-{counter}"] = []
-                services[f"services-{counter}"].append(dic)
-
-                logging.info("List is full!")
-            else:
-                services[f"services-{counter}"].append(dic)
-                print(asizeof(services[f"services-{counter}"]))
+            services["services"].append(dic)
 
     # Send services
-    for key, value in services.items():
-        logging.info("Sending performance-data to API.")
-        request_data = {"services": value}
-        send_data("/checkmk-performances", request_data, get_oath_token())
+    size_parsed = parse_size(services)
+
+    for services in size_parsed:
+        logging.info(f"Sending {len(services['services'])} services to API.")
+        send_data("/checkmk-performances", services, get_oath_token())
 
 
 def do_hosts():
@@ -294,15 +300,18 @@ def do_hosts():
                     hosts["hosts"][len(hosts["hosts"]) - 1][var] = output["result"][host]["attributes"][var]
 
     # Send hosts
-    logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
-    sent = send_data("/checkmk-hosts", hosts, get_oath_token())
+    size_parsed = parse_size(hosts)
 
-    if sent and output:
-        # Data is successfully sent so now the host files can be updated to their current state
-        for site in changed_hosts:
-            # After deleted hosts are correctly added, update the file with host information
-            with open(config.HOST_FILE_STORAGE + f"/{site}.json", "w+") as file:
-                json.dump(changed_hosts[site], file)
+    for hosts in size_parsed:
+        logging.info(f"Sending info from {len(hosts['hosts'])} hosts to API.")
+        sent = send_data("/checkmk-hosts", hosts, get_oath_token())
+
+        if sent and output:
+            # Data is successfully sent so now the host files can be updated to their current state
+            for site in changed_hosts:
+                # After deleted hosts are correctly added, update the file with host information
+                with open(config.HOST_FILE_STORAGE + f"/{site}.json", "w+") as file:
+                    json.dump(changed_hosts[site], file)
 
 
 # Main function of the script
