@@ -173,14 +173,14 @@ def do_events():
                 events[f"events-{counter}"] = []
                 events[f"events-{counter}"].append(dic)
 
-                logging.info(f"List is full!")
+                logging.info("List is full!")
             else:
                 events[f"events-{counter}"].append(dic)
                 print(asizeof(events[f"events-{counter}"]))
 
     # Send events
     for key, value in events.items():
-        logging.info(f"Sending events to API.")
+        logging.info("Sending events to API.")
         print("Sending data to odh!")
         request_data = {"events": value}
         send_data("/checkmk-events", request_data, get_oath_token())
@@ -224,14 +224,14 @@ def do_performance():
                 services[f"services-{counter}"] = []
                 services[f"services-{counter}"].append(dic)
 
-                logging.info(f"List is full!")
+                logging.info("List is full!")
             else:
                 services[f"services-{counter}"].append(dic)
                 print(asizeof(services[f"services-{counter}"]))
 
     # Send services
     for key, value in services.items():
-        logging.info(f"Sending performance-data to API.")
+        logging.info("Sending performance-data to API.")
         request_data = {"services": value}
         send_data("/checkmk-performances", request_data, get_oath_token())
 
