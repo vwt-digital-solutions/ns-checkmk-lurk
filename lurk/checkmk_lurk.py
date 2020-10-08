@@ -304,13 +304,18 @@ def do_hosts():
                         value = output["result"][host]["attributes"][var]
 
                         real_name = next((tag for tag in all_tags["result"]["tag_groups"] if tag["id"] == var), None)
-                        real_value = next((val for val in real_name["tags"] if val["id"] == value), None)
+                        if real_name:
+                            real_value = next((val for val in real_name["tags"] if val["id"] == value), None)
 
-                        hosts["hosts"][len(hosts["hosts"]) - 1][var] = {
-                            "value": value,
-                            "realname": real_name,
-                            "realvalue": real_value
-                         }
+                            hosts["hosts"][len(hosts["hosts"]) - 1][var] = {
+                                "value": value,
+                                "realname": real_name["title"],
+                                "realvalue": real_value["title"]
+                             }
+                        else:
+                            hosts["hosts"][len(hosts["hosts"]) - 1][var] = {
+                                "value": output["result"][host]["attributes"][var]
+                            }
                     else:
                         hosts["hosts"][len(hosts["hosts"]) - 1][var] = {
                             "value": output["result"][host]["attributes"][var]
