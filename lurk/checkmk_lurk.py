@@ -303,7 +303,8 @@ def do_hosts():
                     if all_tags:
                         value = output["result"][host]["attributes"][var]
 
-                        real_name = next((tag for tag in all_tags["result"]["tag_groups"] if tag["id"] == var), None)
+                        real_name = next((tag for tag in all_tags["result"]["tag_groups"] if
+                                          tag["id"] == var.strip("tag_")), None)
                         if real_name:
                             real_value = next((val for val in real_name["tags"] if val["id"] == value), None)
 
