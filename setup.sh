@@ -15,9 +15,6 @@ echo "Setting up notifications to ODH"
 cp -f "$(pwd)"/checkmk-notifications/Notifications_to_ODH.py "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
 # Copy config to notifications folder on checkmk
 cp -f "$(pwd)"/lurk/config.py "$HOME"/local/share/check_mk/notifications/config.py &&
-# Set executing permissions to the files
-chmod +x "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
-chmod +x "$HOME"/local/share/check_mk/notifications/config.py
 
 echo "Notifications are now being send to ODH"
 
@@ -69,9 +66,6 @@ function install_host_cron {
 
   echo "Host crontab installed!"
 }
-
-# Setting permissions to config
-chmod 600 "$(pwd)"/lurk/config.py
 
 # Check if python3-pip is installed if not install it.
 echo "checking if python3-pip is installed"

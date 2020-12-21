@@ -72,8 +72,21 @@ Once the configuration file is configured correctly you need to run the followin
 1. Set executable permissions to the setup file `chmod +x ./setup.sh`.
 2. Change the config name `mv ./lurk/config.py.example ./lurk/config.py` and fill in the config according to 
 [section 2](https://github.com/vwt-digital-solutions/ns-checkmk-lurk#2-edit-config).
+3. Change the permissions of the config so that other users can only read `chmod 644 ./lurk/config.py`.
+
 
 ## 4. Run the setup
 This will setup the crontabs and install the python modules.
 
 `./setup.sh`
+
+## 5. Setup notifications
+When the setup has run, some steps have to be taken to setup the notifications.
+
+1. Set the permissions of the notification script and config to execute
+```
+chmod +x "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
+chmod +x "$HOME"/local/share/check_mk/notifications/config.py
+```
+2. Setup the notifications with scripts as defined on the
+ [checkmk site](https://docs.checkmk.com/latest/en/notifications.html).
