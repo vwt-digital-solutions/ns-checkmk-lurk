@@ -1,5 +1,30 @@
 #!/bin/bash
 
+###################################
+# Installing notifications script #
+###################################
+
+# Check if the config.py file exist, if not exit
+if [ ! -f "$(pwd)"/lurk/config.py ]; then
+    echo "Cannot find $(pwd)/lurk/config.py, exiting..."
+    exit
+fi
+
+echo "Setting up notifications to ODH"
+# Copy notifications script to notifications folder on checkmk
+cp -f "$(pwd)"/checkmk-notifications/Notifications_to_ODH.py "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
+# Copy config to notifications folder on checkmk
+cp -f "$(pwd)"/lurk/config.py "$HOME"/local/share/check_mk/notifications/config.py &&
+# Set executing permissions to the files
+chmod +x "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
+chmod +x "$HOME"/local/share/check_mk/notifications/config.py
+
+echo "Notifications are now being send to ODH"
+
+##################################
+# Installing checkmk lurk script #
+##################################
+
 # Function for exiting script when pip is not installed.
 function no_pip {
   echo -e "python3-pip is not installed, run apt-get install python3-pip, and try again!"
@@ -45,6 +70,9 @@ function install_host_cron {
   echo "Host crontab installed!"
 }
 
+# Setting permissions to config
+chmod 600 "$(pwd)"/lurk/config.py
+
 # Check if python3-pip is installed if not install it.
 echo "checking if python3-pip is installed"
 dpkg -l | grep -qw python3-pip || no_pip
@@ -79,4 +107,4 @@ else
   install_host_cron
 fi
 
-echo "Setup completed!"
+echo "Setup of checkmk lurk completed!"

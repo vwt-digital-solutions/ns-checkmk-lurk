@@ -1,6 +1,6 @@
 # Checkmk Lurk
 
-A script to get data from Checkmk via Livestatus and send it to an API.
+This repository contains two scripts; a script to get data from Checkmk via Livestatus and send it to an API and a script that sends the notifications produced by Checkmk to an API.
 
 # Installation
 ## 1. Clone Repository 
@@ -70,8 +70,8 @@ Set this boolean to True or False depending on if you want debug log level enabl
 Once the configuration file is configured correctly you need to run the following commands.
 
 1. Set executable permissions to the setup file `chmod +x ./setup.sh`.
-2. Change the config name `mv ./lurk/config.py.example ./lurk/config.py`.
-3. Change the permissions of the config so that no other users can access it `chmod 600 ./lurk/config.py`.
+2. Change the config name `mv ./lurk/config.py.example ./lurk/config.py` and fill in the config according to 
+[section 2](https://github.com/vwt-digital-solutions/ns-checkmk-lurk#2-edit-config).
 
 ## 4. Run the setup
 This will setup the crontabs and install the python modules.
