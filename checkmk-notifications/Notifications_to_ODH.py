@@ -4,7 +4,12 @@
 import os
 import sys
 import requests
-import config
+import importlib.util
+
+omd_root = os.environ.get("OMD_ROOT")
+spec = importlib.util.spec_from_file_location("config", f"{omd_root}/local/share/check_mk/notifications/config.py")
+config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(config)
 
 
 def get_oath_token():
@@ -29,7 +34,7 @@ def send_data(path, data, token):
                             json=data,
                             headers=headers)
 
-    sys.stdout.write(f"Sent data to API. Response status code: {request.status_code}")
+    sys.stdout.write(f"Sent data to API. Response status code: {request.status_code}\n")
 
     return request.status_code == 201
 
