@@ -52,8 +52,7 @@ for env in os.environ:
 contact_name = os.environ.get("NOTIFY_CONTACTNAME")
 micro_time = os.environ.get("NOTIFY_MICROTIME")
 hostname = os.environ.get("NOTIFY_HOSTNAME")
-service_description = os.environ.get("NOTIFY_SERVICEDESC")
-notification_id_string = f"{contact_name}_{micro_time}_{hostname}_{service_description}"
+notification_id_string = f"{contact_name}_{micro_time}_{hostname}"
 
 notification_id = {"id": notification_id_string}
 notification_dict.update(notification_id)
