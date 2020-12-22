@@ -3,8 +3,13 @@
 This repository contains two scripts; a script to get data from Checkmk via Livestatus and send it to an API and a script that sends the notifications produced by Checkmk to an API.
 
 # Installation
+
+## Pre-setup
+Every step should be executed with the OMD admin account. The account name is the same as the site name in which Checkmk resides.
+It can be found in the folder `/OMD/sites`. When using Linux switching to this user can be done with the following command:
+`sudo su omd-admin-accountname -`.
 ## 1. Clone Repository 
-Cloning is very easy and only requires one step on most of linux devices:
+Cloning is very easy and only requires one step on most of Linux devices:
 `git clone https://github.com/vwt-digital-solutions/ns-checkmk-lurk.git `  
 ## 2. Edit config
 In the config file you will specify where Checkmk Lurk needs to obtain it's data from and where it should be send to.
@@ -72,6 +77,8 @@ Once the configuration file is configured correctly you need to run the followin
 1. Set executable permissions to the setup file `chmod +x ./setup.sh`.
 2. Change the config name `mv ./lurk/config.py.example ./lurk/config.py` and fill in the config according to 
 [section 2](https://github.com/vwt-digital-solutions/ns-checkmk-lurk#2-edit-config).
+3. Change the permissions of the config so that no other users can access it
+ `chmod 600 ./lurk/config.py`.
 
 ## 4. Run the setup
 This will setup the crontabs and install the python modules.
@@ -81,14 +88,9 @@ This will setup the crontabs and install the python modules.
 ## 5. Setup notifications
 When the setup has run, some steps have to be taken to setup the notifications.
 
-1. Set the permissions of the notification script and config to execute
-```
+1. Set the permission of the notification script to execute
+`
 chmod +x "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
-chmod +x "$HOME"/local/share/check_mk/notifications/config.py
-```
+`
 2. Setup the notifications with scripts as defined on the
  [checkmk site](https://docs.checkmk.com/latest/en/notifications.html).
-
-## 6. Set permission config
-Change the permissions of the config so that no other users can access it
- `chmod 600 ./lurk/config.py`.

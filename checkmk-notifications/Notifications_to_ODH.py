@@ -7,7 +7,7 @@ import requests
 import importlib.util
 
 omd_root = os.environ.get("OMD_ROOT")
-spec = importlib.util.spec_from_file_location("config", f"{omd_root}/local/share/check_mk/notifications/config.py")
+spec = importlib.util.spec_from_file_location("config", f"{omd_root}/ns-checkmk-lurk/lurk/config.py")
 config = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(config)
 
