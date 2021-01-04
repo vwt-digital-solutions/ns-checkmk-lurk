@@ -87,11 +87,6 @@ This will setup the crontabs and install the python modules.
 `./setup.sh`
 
 ## 5. Setup notifications
-When the setup has run, some steps have to be taken to setup the notifications.
-
-1. Set the permission of the notification script to execute
-`
-chmod +x "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
-`
-2. Setup the notifications with scripts as defined on the
- [checkmk site](https://docs.checkmk.com/latest/en/notifications.html).
+When the setup has run, the steps on the
+ [checkmk site](https://docs.checkmk.com/latest/en/notifications.html) have to be followed to setup the
+ notifications with the installed script.

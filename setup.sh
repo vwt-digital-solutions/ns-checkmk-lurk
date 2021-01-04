@@ -13,6 +13,7 @@ fi
 echo "Setting up notifications to ODH"
 # Copy notifications script to notifications folder on checkmk
 cp -f "$(pwd)"/checkmk-notifications/Notifications_to_ODH.py "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py &&
+chmod +x "$HOME"/local/share/check_mk/notifications/Notifications_to_ODH.py
 
 echo "Notifications are now being send to ODH"
 
