@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/vwt-digital-solutions/ns-checkmk-lurk/badge)](https://www.codefactor.io/repository/github/vwt-digital-solutions/ns-checkmk-lurk)
+
 # Checkmk Lurk
 
 This repository contains two scripts; a script to get data from Checkmk via Livestatus and send it to an API and a script that sends the notifications produced by Checkmk to an API.
