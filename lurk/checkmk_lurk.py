@@ -104,6 +104,10 @@ def convert_int_or_float(value):
         return value
 
 
+def get_current_timestamp():
+    return int(time.time() * 1000)
+
+
 def parse_perf_data(data):
     ret = []
 
@@ -154,6 +158,51 @@ def parse_size(data):
         output_list.append(deepcopy(new))
         return output_list
     return [data]
+
+
+def parse_old_hosts(old_hosts, new_output, site, host_list):
+    # Make list of hosts that are no longer visible via the WEB API
+    difference = [host for host in old_hosts if host not in [host for host in new_output["result"]]]
+
+    for host in difference:
+        logging.info(f"Decommissioned host found: {site['name']}_{host}")
+
+        host_list["hosts"].append({
+            "id": site["name"] + "_" + host,
+            "name": site["name"],
+            "hostname": host,
+            "decommissioned": True,
+            "timestamp": get_current_timestamp()
+        })
+
+
+def parse_host_tags(site, output, host_list, host):
+    # Do check here for real tag name
+    all_tags = get_data_web_api(site["web-domain"], site["name"], "get_hosttags", site["username"],
+                                site["secret"], site["ca-certificate"])
+
+    for var in output["result"][host]["attributes"]:
+        if all_tags:
+            value = output["result"][host]["attributes"][var]
+
+            real_name = next((tag for tag in all_tags["result"]["tag_groups"] if
+                              tag["id"] == var.strip("tag_")), None)
+            if real_name:
+                real_value = next((val for val in real_name["tags"] if val["id"] == value), None)
+
+                host_list["hosts"][len(host_list["hosts"]) - 1][var] = {
+                    "value": value,
+                    "realname": real_name["title"],
+                    "realvalue": real_value["title"]
+                }
+            else:
+                host_list["hosts"][len(host_list["hosts"]) - 1][var] = {
+                    "value": output["result"][host]["attributes"][var]
+                }
+        else:
+            host_list["hosts"][len(host_list["hosts"]) - 1][var] = {
+                "value": output["result"][host]["attributes"][var]
+            }
 
 
 def do_events():
@@ -243,7 +292,6 @@ def do_hosts():
     hosts = {"hosts": []}
     changed_hosts = {}
 
-    current_time = int(time.time() * 1000)
     for site in config.SITES:
         # Get hosts
         output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
@@ -262,19 +310,7 @@ def do_hosts():
                 old_hosts = None
 
             if old_hosts:
-                # Make list of hosts that are no longer visible via the WEB API
-                difference = [host for host in old_hosts if host not in [host for host in output["result"]]]
-
-                for host in difference:
-                    logging.info(f"Decommissioned host found: {site['name']}_{host}")
-
-                    hosts["hosts"].append({
-                        "id": site["name"] + "_" + host,
-                        "name": site["name"],
-                        "hostname": host,
-                        "decommissioned": True,
-                        "timestamp": current_time
-                    })
+                parse_old_hosts(old_hosts, output, site, hosts)
 
             for host in output["result"]:
 
@@ -289,36 +325,11 @@ def do_hosts():
                                                           ))[0][0],
                         "address": site["web-domain"],
                         "decommissioned": False,
-                        "timestamp": current_time
+                        "timestamp": get_current_timestamp()
                     }
                 )
 
-                # Do check here for real tag name
-                all_tags = get_data_web_api(site["web-domain"], site["name"], "get_hosttags", site["username"],
-                                            site["secret"], site["ca-certificate"])
-
-                for var in output["result"][host]["attributes"]:
-                    if all_tags:
-                        value = output["result"][host]["attributes"][var]
-
-                        real_name = next((tag for tag in all_tags["result"]["tag_groups"] if
-                                          tag["id"] == var.strip("tag_")), None)
-                        if real_name:
-                            real_value = next((val for val in real_name["tags"] if val["id"] == value), None)
-
-                            hosts["hosts"][len(hosts["hosts"]) - 1][var] = {
-                                "value": value,
-                                "realname": real_name["title"],
-                                "realvalue": real_value["title"]
-                             }
-                        else:
-                            hosts["hosts"][len(hosts["hosts"]) - 1][var] = {
-                                "value": output["result"][host]["attributes"][var]
-                            }
-                    else:
-                        hosts["hosts"][len(hosts["hosts"]) - 1][var] = {
-                            "value": output["result"][host]["attributes"][var]
-                        }
+                parse_host_tags(site, output, hosts, host)
 
     # Send hosts
     size_parsed = parse_size(hosts)
