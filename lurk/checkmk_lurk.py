@@ -28,7 +28,7 @@ def get_oath_token():
 
 
 def get_data(query, address, certificate):
-    family = socket.AF_INET if type(address) == tuple else socket.AF_UNIX
+    family = socket.AF_INET if isinstance(address, tuple) else socket.AF_UNIX
     sock = socket.socket(family, socket.SOCK_STREAM)
 
     if certificate:
@@ -43,7 +43,6 @@ def get_data(query, address, certificate):
 
     try:
         sock.connect(address)
-    # TODO if site is down send message to API notifying it that the site is down
     except TimeoutError:
         logging.info(f"LIVESTATUS | Timeout Error, site with address {address} is possibly offline.")
         return None
@@ -154,8 +153,7 @@ def parse_size(data):
                 new[list_name] = [item]
         output_list.append(deepcopy(new))
         return output_list
-    else:
-        return [data]
+    return [data]
 
 
 def do_events():
