@@ -2,16 +2,16 @@ import argparse
 import json
 import logging
 import os
+import socket
 import ssl
 import sys
 import time
+from ast import literal_eval
+from copy import deepcopy
+
 import config
 import requests
-import socket
-
-from ast import literal_eval
 from pympler.asizeof import asizeof
-from copy import deepcopy
 
 
 def get_oath_token():
@@ -19,10 +19,9 @@ def get_oath_token():
         "client_id": config.OAUTH_CLIENT_ID,
         "client_secret": config.OAUTH_CLIENT_SECRET,
         "scope": config.OAUTH_CLIENT_SCOPE,
-        "grant_type": "client_credentials"
+        "grant_type": "client_credentials",
     }
-    request = requests.post(config.OAUTH_TOKEN_URL,
-                            data=data).json()
+    request = requests.post(config.OAUTH_TOKEN_URL, data=data).json()
 
     return request["access_token"]
 
@@ -44,20 +43,26 @@ def get_data(query, address, certificate):
     try:
         sock.connect(address)
     except TimeoutError:
-        logging.info(f"LIVESTATUS | Timeout Error, site with address {address} is possibly offline.")
+        logging.info(
+            f"LIVESTATUS | Timeout Error, site with address {address} is possibly offline."
+        )
         return None
     except ConnectionRefusedError:
-        logging.info(f"LIVESTATUS | Connection Refused Error, site with address {address} is possibly offline.")
+        logging.info(
+            f"LIVESTATUS | Connection Refused Error, site with address {address} is possibly offline."
+        )
         return None
     except ssl.SSLCertVerificationError:
-        logging.info(f"LIVESTATUS | Certificate Verification Error, site with address {address} with certificate "
-                     f"{certificate}.")
+        logging.info(
+            f"LIVESTATUS | Certificate Verification Error, site with address {address} with certificate "
+            f"{certificate}."
+        )
         return None
 
     sock.send(query.encode("utf-8"))
 
     data = []
-    while len(data) == 0 or data[-1] != b'':
+    while len(data) == 0 or data[-1] != b"":
         data.append(sock.recv(4096))
     sock.close()
 
@@ -65,30 +70,36 @@ def get_data(query, address, certificate):
 
 
 def get_data_web_api(domain, site, action, username, secret, ca_certificate):
-    url = f"https://{domain}/{site}/check_mk/webapi.py?action={action}&_username={username}&_secret={secret}" \
-          f"&output_format=json"
+    url = (
+        f"https://{domain}/{site}/check_mk/webapi.py?action={action}&_username={username}&_secret={secret}"
+        f"&output_format=json"
+    )
     try:
-        return requests.get(url, verify=(True if not ca_certificate else ca_certificate)).json()
+        return requests.get(
+            url, verify=(True if not ca_certificate else ca_certificate)
+        ).json()
     except requests.exceptions.SSLError:
-        logging.info(f"WEB API | SSL Error, site ({site}) with domain {domain} with certificate {ca_certificate}.")
+        logging.info(
+            f"WEB API | SSL Error, site ({site}) with domain {domain} with certificate {ca_certificate}."
+        )
         return None
     except requests.exceptions.ConnectionError:
-        logging.info(f"WEB API | Connection Error, site ({site}) with domain {domain} is possibly offline.")
+        logging.info(
+            f"WEB API | Connection Error, site ({site}) with domain {domain} is possibly offline."
+        )
         return None
     except json.decoder.JSONDecodeError:
-        logging.info(f"WEB API | JSON Decode Error, site ({site}) with domain {domain} is giving unexpected output "
-                     f"that's unparsable. Please check your username and secret.")
+        logging.info(
+            f"WEB API | JSON Decode Error, site ({site}) with domain {domain} is giving unexpected output "
+            f"that's unparsable. Please check your username and secret."
+        )
         return None
 
 
 def send_data(path, data, token):
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
+    headers = {"Authorization": f"Bearer {token}"}
 
-    request = requests.post(config.API_URL + path,
-                            json=data,
-                            headers=headers)
+    request = requests.post(config.API_URL + path, json=data, headers=headers)
 
     logging.info(f"Sent data to API. Response status code: {request.status_code}")
 
@@ -123,19 +134,20 @@ def parse_perf_data(data):
         values = var_value.split(";")
 
         if len(values) == 5:
-            ret.append({
-                "var_name": var_name,
-                "actual": convert_int_or_float(values[0]),
-                "warning": convert_int_or_float(values[1]),
-                "critical": convert_int_or_float(values[2]),
-                "min": convert_int_or_float(values[3]),
-                "max": convert_int_or_float(values[4]),
-            })
+            ret.append(
+                {
+                    "var_name": var_name,
+                    "actual": convert_int_or_float(values[0]),
+                    "warning": convert_int_or_float(values[1]),
+                    "critical": convert_int_or_float(values[2]),
+                    "min": convert_int_or_float(values[3]),
+                    "max": convert_int_or_float(values[4]),
+                }
+            )
         else:
-            ret.append({
-                "var_name": var_name,
-                "actual": convert_int_or_float(values[0])
-            })
+            ret.append(
+                {"var_name": var_name, "actual": convert_int_or_float(values[0])}
+            )
 
     return ret
 
@@ -162,38 +174,58 @@ def parse_size(data):
 
 def parse_old_hosts(old_hosts, new_output, site, host_list):
     # Make list of hosts that are no longer visible via the WEB API
-    difference = [host for host in old_hosts if host not in [host for host in new_output["result"]]]
+    difference = [
+        host
+        for host in old_hosts
+        if host not in [host for host in new_output["result"]]
+    ]
 
     for host in difference:
         logging.info(f"Decommissioned host found: {site['name']}_{host}")
 
-        host_list["hosts"].append({
-            "id": site["name"] + "_" + host,
-            "name": site["name"],
-            "hostname": host,
-            "decommissioned": True,
-            "timestamp": get_current_timestamp()
-        })
+        host_list["hosts"].append(
+            {
+                "id": site["name"] + "_" + host,
+                "name": site["name"],
+                "hostname": host,
+                "decommissioned": True,
+                "timestamp": get_current_timestamp(),
+            }
+        )
 
 
 def parse_host_tags(site, output, host_list, host):
     # Do check here for real tag name
-    all_tags = get_data_web_api(site["web-domain"], site["name"], "get_hosttags", site["username"],
-                                site["secret"], site["ca-certificate"])
+    all_tags = get_data_web_api(
+        site["web-domain"],
+        site["name"],
+        "get_hosttags",
+        site["username"],
+        site["secret"],
+        site["ca-certificate"],
+    )
 
     for var in output["result"][host]["attributes"]:
         if all_tags:
             value = output["result"][host]["attributes"][var]
 
-            real_name = next((tag for tag in all_tags["result"]["tag_groups"] if
-                              tag["id"] == var.strip("tag_")), None)
+            real_name = next(
+                (
+                    tag
+                    for tag in all_tags["result"]["tag_groups"]
+                    if tag["id"] == var.strip("tag_")
+                ),
+                None,
+            )
             if real_name:
-                real_value = next((val for val in real_name["tags"] if val["id"] == value), None)
+                real_value = next(
+                    (val for val in real_name["tags"] if val["id"] == value), None
+                )
 
                 host_list["hosts"][len(host_list["hosts"]) - 1][var] = {
                     "value": value,
                     "realname": real_name["title"],
-                    "realvalue": real_value["title"]
+                    "realvalue": real_value["title"],
                 }
             else:
                 host_list["hosts"][len(host_list["hosts"]) - 1][var] = {
@@ -208,19 +240,32 @@ def parse_host_tags(site, output, host_list, host):
 def do_events():
     # Get events
     events = {"events": []}
-    keys = ["id", "name", "timestamp", "type", "hostname", "service_description", "state_type", "output", "long_output",
-            "event_state"]
+    keys = [
+        "id",
+        "name",
+        "timestamp",
+        "type",
+        "hostname",
+        "service_description",
+        "state_type",
+        "output",
+        "long_output",
+        "event_state",
+    ]
 
     # Foreach site get event data and add to events dict
     for site in config.SITES:
-        result = get_data("GET log\n"
-                          f"Filter: time >= {int(time.time() - config.EVENT_TIME)}\n"
-                          "Filter: host_name != ""\n"
-                          "Columns: time type host_name service_description state_type plugin_output "
-                          "long_plugin_output state\n"
-                          "OutputFormat: json\n\n",
-                          site["address"],
-                          site["certificate"])
+        result = get_data(
+            "GET log\n"
+            f"Filter: time >= {int(time.time() - config.EVENT_TIME)}\n"
+            "Filter: host_name != "
+            "\n"
+            "Columns: time type host_name service_description state_type plugin_output "
+            "long_plugin_output state\n"
+            "OutputFormat: json\n\n",
+            site["address"],
+            site["certificate"],
+        )
 
         if not result:
             continue
@@ -233,7 +278,9 @@ def do_events():
 
             dic = dict(zip(keys, event_list))
 
-            dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
+            dic[
+                "id"
+            ] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
             dic["timestamp"] = dic["timestamp"] * 1000
 
             events["events"].append(dic)
@@ -249,18 +296,31 @@ def do_events():
 def do_performance():
     # Get performance data
     services = {"services": []}
-    keys = ["id", "name", "timestamp", "host_groups", "hostname", "service_description", "perf_data", "service_state"]
+    keys = [
+        "id",
+        "name",
+        "timestamp",
+        "host_groups",
+        "hostname",
+        "service_description",
+        "perf_data",
+        "service_state",
+    ]
 
     for site in config.SITES:
-        result = get_data("GET services\n"
-                          "Filter: host_name != ""\n"
-                          "Filter: perf_data != ""\n"
-                          "Filter: perf_data != null\n"
-                          "And: 3\n"
-                          "Columns: host_groups host_name service_description perf_data state\n"
-                          "OutputFormat: json\n\n",
-                          site["address"],
-                          site["certificate"])
+        result = get_data(
+            "GET services\n"
+            "Filter: host_name != "
+            "\n"
+            "Filter: perf_data != "
+            "\n"
+            "Filter: perf_data != null\n"
+            "And: 3\n"
+            "Columns: host_groups host_name service_description perf_data state\n"
+            "OutputFormat: json\n\n",
+            site["address"],
+            site["certificate"],
+        )
 
         if not result:
             continue
@@ -274,18 +334,25 @@ def do_performance():
 
             dic = dict(zip(keys, service_list))
 
-            dic["id"] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
+            dic[
+                "id"
+            ] = f"{site['name']}_{dic['timestamp']}_{dic['hostname']}_{dic['service_description']}"
             dic["timestamp"] = dic["timestamp"] * 1000
-            dic["perf_data"] = parse_perf_data(dic["perf_data"]) if dic["perf_data"] != "" else dic["perf_data"]
+            dic["perf_data"] = (
+                parse_perf_data(dic["perf_data"])
+                if dic["perf_data"] != ""
+                else dic["perf_data"]
+            )
 
             services["services"].append(dic)
 
-    # Send services
-    size_parsed = parse_size(services)
-
-    for services in size_parsed:
-        logging.info(f"Sending {len(services['services'])} services to API.")
-        send_data("/checkmk-performances", services, get_oath_token())
+            if len(services["services"]) % 50 == 0:
+                if sys.getsizeof(str(services)) > 500000:
+                    logging.info(
+                        f"Sending {len(services['services'])} services to API."
+                    )
+                    send_data("/checkmk-performances", services, get_oath_token())
+                    services = {"services": []}
 
 
 def do_hosts():
@@ -294,8 +361,14 @@ def do_hosts():
 
     for site in config.SITES:
         # Get hosts
-        output = get_data_web_api(site["web-domain"], site["name"], "get_all_hosts", site["username"], site["secret"],
-                                  site["ca-certificate"])
+        output = get_data_web_api(
+            site["web-domain"],
+            site["name"],
+            "get_all_hosts",
+            site["username"],
+            site["secret"],
+            site["ca-certificate"],
+        )
 
         # Parse hosts
         if output:
@@ -304,7 +377,9 @@ def do_hosts():
             # Check if there are hosts gone (decommissioned)
             # Load old hosts
             try:
-                with open(config.HOST_FILE_STORAGE + f"/{site['name']}.json") as json_file:
+                with open(
+                    config.HOST_FILE_STORAGE + f"/{site['name']}.json"
+                ) as json_file:
                     old_hosts = json.load(json_file)
             except FileNotFoundError:
                 old_hosts = None
@@ -319,13 +394,16 @@ def do_hosts():
                         "id": site["name"] + "_" + host,
                         "name": site["name"],
                         "hostname": host,
-                        "hostgroups": json.loads(get_data("GET hosts\nColumns: groups\nOutputFormat: json\n\n",
-                                                          site["address"],
-                                                          site["certificate"]
-                                                          ))[0][0],
+                        "hostgroups": json.loads(
+                            get_data(
+                                "GET hosts\nColumns: groups\nOutputFormat: json\n\n",
+                                site["address"],
+                                site["certificate"],
+                            )
+                        )[0][0],
                         "address": site["web-domain"],
                         "decommissioned": False,
-                        "timestamp": get_current_timestamp()
+                        "timestamp": get_current_timestamp(),
                     }
                 )
 
@@ -353,8 +431,9 @@ def main():
     logging.basicConfig(
         filename=config.LOGGING_FILE,
         level=logging.DEBUG if config.LOGGING_DEBUG else logging.INFO,
-        format='%(asctime)s %(levelname)s\t| %(message)s',
-        datefmt='%d/%m/%Y %H:%M:%S')
+        format="%(asctime)s %(levelname)s\t| %(message)s",
+        datefmt="%d/%m/%Y %H:%M:%S",
+    )
 
     # Do checks if config.py is properly configured and if user running script is owner of config
     current_user = os.geteuid()
@@ -362,26 +441,35 @@ def main():
     permissions = int(oct(file_info.st_mode)[-3:])
 
     if current_user != file_info.st_uid:
-        logging.info("User running the script isn't the owner of config.py. "
-                     "Please change the ownership or run under different user.")
+        logging.info(
+            "User running the script isn't the owner of config.py. "
+            "Please change the ownership or run under different user."
+        )
         return 1
     if permissions != 600:
-        logging.info(f"Config.py has wrong file permissions. Please change them to 600. Current file permissions: "
-                     f"{permissions}")
+        logging.info(
+            f"Config.py has wrong file permissions. Please change them to 600. Current file permissions: "
+            f"{permissions}"
+        )
         return 1
 
     # Add the arguments to the parser
-    ap.add_argument("-data", "--data", required=True, help="Select which data to retrieve: event / performance / host")
+    ap.add_argument(
+        "-data",
+        "--data",
+        required=True,
+        help="Select which data to retrieve: event / performance / host",
+    )
     args = vars(ap.parse_args())
 
     # Check which data should be retrieved
-    if args['data'] == "event":
+    if args["data"] == "event":
         logging.info("Retrieving event data.")
         do_events()
-    elif args['data'] == "performance":
+    elif args["data"] == "performance":
         logging.info("Retrieving performance data.")
         do_performance()
-    elif args['data'] == "host":
+    elif args["data"] == "host":
         logging.info("Retrieving host data.")
         do_hosts()
     else:
