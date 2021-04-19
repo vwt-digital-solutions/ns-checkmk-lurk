@@ -205,6 +205,10 @@ def parse_host_tags(site, output, host_list, host):
         site["ca-certificate"],
     )
 
+    logging.debug(
+        f"ATTRIBUTES '{host}': {json.dumps(output['result'][host]['attributes'])}"
+    )  # Debug logging
+
     for var in output["result"][host]["attributes"]:
         if all_tags:
             value = output["result"][host]["attributes"][var]
