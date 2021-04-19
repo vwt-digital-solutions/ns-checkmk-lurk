@@ -207,7 +207,6 @@ def parse_host_tags(site, output, host_list, host):
     )
 
     timestamp = datetime.utcnow().isoformat()
-
     logging.debug(
         f"[time:{timestamp}] [action:get_hosttags] [webDomain:{site['web-domain']}] [siteName:{site['name']}] "
         + f"[host:{host}] {json.dumps(output['result'][host]['attributes'])}"
@@ -396,6 +395,11 @@ def do_hosts():
                 parse_old_hosts(old_hosts, output, site, hosts)
 
             for host in output["result"]:
+                timestamp = datetime.utcnow().isoformat()
+                logging.debug(
+                    f"[time:{timestamp}] [action:get_all_hosts] [webDomain:{site['web-domain']}] "
+                    + f"[siteName:{site['name']}] [host:{host}] {json.dumps(output['result'][host])}"
+                )  # Debug logging
 
                 hosts["hosts"].append(
                     {
