@@ -8,6 +8,7 @@ import sys
 import time
 from ast import literal_eval
 from copy import deepcopy
+from datetime import datetime
 
 import config
 import requests
@@ -205,8 +206,11 @@ def parse_host_tags(site, output, host_list, host):
         site["ca-certificate"],
     )
 
+    timestamp = datetime.utcnow().isoformat()
+
     logging.debug(
-        f"ATTRIBUTES '{host}': {json.dumps(output['result'][host]['attributes'])}"
+        f"[time:{timestamp}] [action:get_hosttags] [webDomain:{site['web-domain']}] [siteName:{site['name']}] "
+        + f"[host:{host}] {json.dumps(output['result'][host]['attributes'])}"
     )  # Debug logging
 
     for var in output["result"][host]["attributes"]:
