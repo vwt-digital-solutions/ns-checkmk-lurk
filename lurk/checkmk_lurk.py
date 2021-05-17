@@ -274,6 +274,12 @@ def do_events():
             site["certificate"],
         )
 
+        timestamp = datetime.utcnow().isoformat()
+        logging.debug(
+            f"[time:{timestamp}] [action:get_all_events] [webDomain:{site['web-domain']}] "
+            + f"[siteName:{site['name']}] {json.dumps(result)}"
+        )  # Debug logging
+
         if not result:
             continue
 
@@ -328,6 +334,12 @@ def do_performance():
             site["address"],
             site["certificate"],
         )
+
+        timestamp = datetime.utcnow().isoformat()
+        logging.debug(
+            f"[time:{timestamp}] [action:get_all_performances] [webDomain:{site['web-domain']}] "
+            + f"[siteName:{site['name']}] {json.dumps(result)}"
+        )  # Debug logging
 
         if not result:
             continue
