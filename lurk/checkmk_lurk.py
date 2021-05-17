@@ -365,13 +365,18 @@ def do_performance():
 
             services["services"].append(dic)
 
-            if len(services["services"]) % 50 == 0:
-                if sys.getsizeof(str(services)) > 500000:
-                    logging.info(
-                        f"Sending {len(services['services'])} services to API."
-                    )
-                    send_data("/checkmk-performances", services, get_oath_token())
-                    services = {"services": []}
+            # After each 50th message, check if byte size is not more than 50000; else post towards API and start again
+            if (
+                len(services["services"]) % 50 == 0
+                and sys.getsizeof(str(services)) > 500000
+            ):
+                logging.info(f"Sending {len(services['services'])} services to API.")
+                send_data("/checkmk-performances", services, get_oath_token())
+                services = {"services": []}
+
+        if len(services["services"]) > 0:
+            logging.info(f"Sending {len(services['services'])} services to API.")
+            send_data("/checkmk-performances", services, get_oath_token())
 
 
 def do_hosts():
