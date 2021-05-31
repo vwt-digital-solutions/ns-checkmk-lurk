@@ -9,10 +9,12 @@ import time
 from ast import literal_eval
 from copy import deepcopy
 from datetime import datetime
+from json.decoder import JSONDecodeError
 
 import config
 import requests
 from pympler.asizeof import asizeof
+from requests.exceptions import ConnectionError, HTTPError
 
 
 def get_oath_token():
@@ -22,9 +24,21 @@ def get_oath_token():
         "scope": config.OAUTH_CLIENT_SCOPE,
         "grant_type": "client_credentials",
     }
-    request = requests.post(config.OAUTH_TOKEN_URL, data=data).json()
 
-    return request["access_token"]
+    try:
+        request = requests.post(config.OAUTH_TOKEN_URL, data=data).json()
+    except (ConnectionError, HTTPError) as e:
+        logging.error(f"An error occurred when retrieving AD Auth token: {str(e)}")
+        return None
+    except JSONDecodeError as e:
+        logging.debug(f"An error occurred when retrieving AD Auth token: {str(e)}")
+        return None
+    else:
+        if "access_token" in request:
+            return request["access_token"]
+
+        logging.error(f"An error occurred when retrieving AD Auth token: {request}")
+        return None
 
 
 def get_data(query, address, certificate):
@@ -98,6 +112,9 @@ def get_data_web_api(domain, site, action, username, secret, ca_certificate):
 
 
 def send_data(path, data, token):
+    if not token:
+        return False
+
     headers = {"Authorization": f"Bearer {token}"}
 
     request = requests.post(config.API_URL + path, json=data, headers=headers)
