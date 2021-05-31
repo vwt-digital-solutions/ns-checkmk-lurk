@@ -8,10 +8,13 @@ import sys
 import time
 from ast import literal_eval
 from copy import deepcopy
+from datetime import datetime
+from json.decoder import JSONDecodeError
 
 import config
 import requests
 from pympler.asizeof import asizeof
+from requests.exceptions import ConnectionError, HTTPError
 
 
 def get_oath_token():
@@ -21,9 +24,21 @@ def get_oath_token():
         "scope": config.OAUTH_CLIENT_SCOPE,
         "grant_type": "client_credentials",
     }
-    request = requests.post(config.OAUTH_TOKEN_URL, data=data).json()
 
-    return request["access_token"]
+    try:
+        request = requests.post(config.OAUTH_TOKEN_URL, data=data).json()
+    except (ConnectionError, HTTPError) as e:
+        logging.error(f"An error occurred when retrieving AD Auth token: {str(e)}")
+        return None
+    except JSONDecodeError as e:
+        logging.debug(f"An error occurred when retrieving AD Auth token: {str(e)}")
+        return None
+    else:
+        if "access_token" in request:
+            return request["access_token"]
+
+        logging.error(f"An error occurred when retrieving AD Auth token: {request}")
+        return None
 
 
 def get_data(query, address, certificate):
@@ -97,6 +112,9 @@ def get_data_web_api(domain, site, action, username, secret, ca_certificate):
 
 
 def send_data(path, data, token):
+    if not token:
+        return False
+
     headers = {"Authorization": f"Bearer {token}"}
 
     request = requests.post(config.API_URL + path, json=data, headers=headers)
@@ -205,6 +223,12 @@ def parse_host_tags(site, output, host_list, host):
         site["ca-certificate"],
     )
 
+    timestamp = datetime.utcnow().isoformat()
+    logging.debug(
+        f"[time:{timestamp}] [action:get_hosttags] [webDomain:{site['web-domain']}] [siteName:{site['name']}] "
+        + f"[host:{host}] {json.dumps(output['result'][host]['attributes'])}"
+    )  # Debug logging
+
     for var in output["result"][host]["attributes"]:
         if all_tags:
             value = output["result"][host]["attributes"][var]
@@ -267,6 +291,12 @@ def do_events():
             site["certificate"],
         )
 
+        timestamp = datetime.utcnow().isoformat()
+        logging.debug(
+            f"[time:{timestamp}] [action:get_all_events] [webDomain:{site['web-domain']}] "
+            + f"[siteName:{site['name']}] {json.dumps(result)}"
+        )  # Debug logging
+
         if not result:
             continue
 
@@ -322,6 +352,12 @@ def do_performance():
             site["certificate"],
         )
 
+        timestamp = datetime.utcnow().isoformat()
+        logging.debug(
+            f"[time:{timestamp}] [action:get_all_performances] [webDomain:{site['web-domain']}] "
+            + f"[siteName:{site['name']}] {json.dumps(result)}"
+        )  # Debug logging
+
         if not result:
             continue
 
@@ -346,13 +382,18 @@ def do_performance():
 
             services["services"].append(dic)
 
-            if len(services["services"]) % 50 == 0:
-                if sys.getsizeof(str(services)) > 500000:
-                    logging.info(
-                        f"Sending {len(services['services'])} services to API."
-                    )
-                    send_data("/checkmk-performances", services, get_oath_token())
-                    services = {"services": []}
+            # After each 50th message, check if byte size is not more than 50000; else post towards API and start again
+            if (
+                len(services["services"]) % 50 == 0
+                and sys.getsizeof(str(services)) > 500000
+            ):
+                logging.info(f"Sending {len(services['services'])} services to API.")
+                send_data("/checkmk-performances", services, get_oath_token())
+                services = {"services": []}
+
+        if len(services["services"]) > 0:
+            logging.info(f"Sending {len(services['services'])} services to API.")
+            send_data("/checkmk-performances", services, get_oath_token())
 
 
 def do_hosts():
@@ -388,6 +429,11 @@ def do_hosts():
                 parse_old_hosts(old_hosts, output, site, hosts)
 
             for host in output["result"]:
+                timestamp = datetime.utcnow().isoformat()
+                logging.debug(
+                    f"[time:{timestamp}] [action:get_all_hosts] [webDomain:{site['web-domain']}] "
+                    + f"[siteName:{site['name']}] [host:{host}] {json.dumps(output['result'][host])}"
+                )  # Debug logging
 
                 hosts["hosts"].append(
                     {
