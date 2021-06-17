@@ -102,4 +102,4 @@ This will setup the crontabs and install the python modules.
 ## 5. Setup notifications
 When the setup has run, the steps on the
  [checkmk site](https://docs.checkmk.com/latest/en/notifications.html) have to be followed to setup the
- notifications with the installed script.
+ notifications with the installed script. For the `Notification Method` choose `Notifications to ODH`.
