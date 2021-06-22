@@ -11,8 +11,19 @@ Every step should be executed with the OMD admin account. The account name is th
 It can be found in the folder `/OMD/sites`. When using Linux switching to this user can be done with the following command:
 `sudo su omd-admin-accountname -`.
 ## 1. Get latest version
-To get the latest version, go to [tags](https://github.com/vwt-digital-solutions/ns-checkmk-lurk/tags), click on the last made tag
- and download the source code. Unzip the downloaded folder and it is ready to go.
+The [tags](https://github.com/vwt-digital-solutions/ns-checkmk-lurk/tags) show the latest version of the scripts. There are two ways to get the latest version.
+### Via code
+Use the following to get the right tag via code:
+```
+git clone https://github.com/vwt-digital-solutions/ns-checkmk-lurk.git
+cd ns-checkmk-lurk
+git fetch --all --tags
+latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+git checkout $latest_tag
+```
+
+### Via UI
+Click on the last made tag and download the source code. Unzip the downloaded folder and it is ready to go.
 
 ## 2. Edit config
 In the config file you will specify where Checkmk Lurk needs to obtain it's data from and where it should be send to.
@@ -91,4 +102,4 @@ This will setup the crontabs and install the python modules.
 ## 5. Setup notifications
 When the setup has run, the steps on the
  [checkmk site](https://docs.checkmk.com/latest/en/notifications.html) have to be followed to setup the
- notifications with the installed script.
+ notifications with the installed script. For the `Notification Method` choose `Notifications to ODH`.
