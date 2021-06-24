@@ -115,9 +115,11 @@ def send_data(path, data, token):
     if not token:
         return False
 
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    request = requests.post(config.API_URL + path, json=data, headers=headers)
+    request = requests.post(
+        config.API_URL + path, data=json.dumps(data), headers=headers
+    )
 
     logging.info(f"Sent data to API. Response status code: {request.status_code}")
 
